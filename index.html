@@ -1,0 +1,3571 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="referrer" content="no-referrer-when-downgrade">
+<title>Fishing Diary</title>
+<!-- 4.3.55: Capacitor bridge runtime. Il file capacitor.js viene generato da `npx cap sync ios`
+     SOLO se referenziato qui. Senza questo, window.Capacitor.registerPlugin è undefined. -->
+<script src="capacitor.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--blu:#1a3a5c;--blu2:#2a5298;--azzurro:#4a90d9;--bg:#f4f7fa;--card:#fff;--border:#d0dce8;--text:#1a2a3a;--muted:#6b8099}
+body{font-family:system-ui,sans-serif;font-size:15px;background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;overflow-x:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.app{max-width:880px;margin:0 auto;padding:1rem}
+.header{position:relative;border-radius:16px;margin-bottom:1.25rem;color:#fff;overflow:hidden;min-height:160px}
+.header-bg{position:absolute;inset:0;width:100%;height:100%}
+.header-content{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;padding:1.25rem 1.5rem}
+.header-title{font-size:26px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+.header-sub{font-size:13px;opacity:.85;margin-top:3px;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.header-info{font-size:11px;opacity:.75;margin-top:8px;line-height:1.5;max-width:380px}
+.header-pescatore{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.header-pescatore label{font-size:12px;color:#fff;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,.8);text-transform:uppercase;letter-spacing:.07em}
+.header-pescatore input{background:rgba(0,0,0,.4);border:2px solid #fff;border-radius:8px;color:#fff;font-size:14px;font-weight:600;padding:6px 10px;text-align:center;width:180px}
+.header-pescatore input::placeholder{color:rgba(255,255,255,.85)}
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem;background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:5px}
+.tab{flex:1;padding:9px 4px;font-size:13px;font-weight:500;color:var(--muted);border-radius:8px;text-align:center;cursor:pointer;touch-action:manipulation;user-select:none}
+.tab.active{background:var(--blu);color:#fff}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:0.5px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 4px rgba(26,58,92,.06)}
+.section-title{font-size:11px;font-weight:600;color:var(--azzurro);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px;margin-top:10px;font-weight:500}
+label:first-child{margin-top:0}
+input,textarea{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fafcff;color:var(--text)}
+textarea{resize:vertical;min-height:70px}
+.sel-wrap{position:relative;display:block}
+.sel-wrap::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none}
+select{width:100%;padding:9px 30px 9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fafcff;color:var(--text);-webkit-appearance:none;appearance:none;cursor:pointer}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.btn{display:inline-block;padding:9px 18px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;font-size:14px;font-weight:500;touch-action:manipulation;user-select:none;text-align:center}
+.btn-primary{background:var(--blu2);color:#fff;border-color:transparent}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-danger{color:#c0392b;border-color:#f5c6c2;background:#fff8f8}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+.tog{display:block;text-align:center;padding:6px 4px;border:1px solid var(--border);border-radius:7px;background:#fafcff;cursor:pointer;font-size:12px;color:var(--muted);touch-action:manipulation;user-select:none}
+.tog.selected{background:var(--blu2);color:#fff;border-color:var(--blu2)}
+.dir-btn{display:inline-block;width:42px;height:34px;line-height:34px;border:1px solid var(--border);border-radius:7px;background:#fafcff;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);text-align:center;touch-action:manipulation;user-select:none}
+.dir-btn.selected{background:var(--blu2);color:#fff;border-color:var(--blu2)}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;background:#eef4fb;color:var(--blu2)}
+.badge-cr{background:#e8f5ee;color:#2d7a4a}
+.badge-casa{background:#fff3e8;color:#e07b39}
+.badge-specie{background:#f0f4ff;color:#4a5ab8}
+.catch-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f0f4f8}
+.catch-row:last-child{border-bottom:none}
+.catture-form{background:#f8fafd;border:1px dashed var(--border);border-radius:10px;padding:1rem;margin-top:1rem}
+.uscita-card{background:var(--card);border:0.5px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:.75rem;border-left:4px solid var(--azzurro)}
+.uscita-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.uscita-date{font-weight:600;font-size:15px;color:var(--blu)}
+.uscita-spot{font-size:13px;color:var(--muted);margin-top:2px}
+.stars{color:#f0a500;font-size:14px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem}
+.stat-card{background:linear-gradient(135deg,var(--blu) 0%,var(--blu2) 100%);border-radius:12px;padding:1rem;text-align:center;color:#fff}
+.stat-num{font-size:26px;font-weight:700}
+.stat-label{font-size:11px;opacity:.75;margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+#map{height:350px;width:100%;border-radius:10px;border:1px solid var(--border)}
+@media(max-width:600px){
+  #map{height:100%;min-height:340px}
+}
+@media(min-width:768px) and (max-width:1199px){
+  #map{height:450px}
+}
+@media(min-width:1200px){
+  #map{height:550px}
+}
+@media(max-width:600px){
+  body.mappa-active .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;padding:0.5rem}
+  body.mappa-active .tabs{flex-shrink:0}
+  body.mappa-active #panel-mappa{flex:1;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+  body.mappa-active #panel-mappa>.card{flex-shrink:0}
+  body.mappa-active #card-mappa-wrap{flex:1;min-height:400px;display:flex}
+  body.mappa-active #card-mappa-wrap>#map{flex:1;height:auto}
+  body.mappa-active .header{display:none!important}
+}
+.spot-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f4f8}
+.spot-item:last-child{border-bottom:none}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:2rem}
+.filter-bar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:.75rem 1rem}
+.voto-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.voto-opt{padding:6px 12px;border:1px solid var(--border);border-radius:7px;background:#fafcff;cursor:pointer;font-size:12px;color:var(--muted);touch-action:manipulation;user-select:none}
+.voto-opt.sel{background:#fff3cd;border-color:#f0a500;color:#7a5800}
+@media(max-width:600px){
+  .header-pescatore{margin-left:0;align-items:center;width:100%}
+  .tabs{flex-wrap:wrap}
+  .tab{flex:none;width:calc(50% - 4px);font-size:12px}
+  .row,.row3{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  #esca_colore_wrap{grid-template-columns:repeat(3,1fr)!important}
+  .filter-bar{flex-direction:column;align-items:stretch}
+  .actions{flex-wrap:wrap}
+  .actions .btn{flex:1}
+}
+
+/* ===== FAB TRACCIATO GPS ===== */
+#fab-tracciato{
+  position:fixed;right:20px;bottom:24px;z-index:1000;
+  width:64px;height:64px;border-radius:50%;
+  background:#1a7a3a;color:#fff;
+  display:none;align-items:center;justify-content:center;
+  font-size:26px;box-shadow:0 4px 14px rgba(0,0,0,.28);
+  cursor:pointer;user-select:none;touch-action:manipulation;
+  border:3px solid #fff;
+  transition:background .2s,transform .15s;
+}
+#fab-tracciato.mostrato{display:flex}
+#fab-tracciato:active{transform:scale(.94)}
+#fab-tracciato.attivo{
+  background:#c0392b;
+  animation:fab-pulse 2s infinite;
+}
+@keyframes fab-pulse{
+  0%,100%{box-shadow:0 4px 14px rgba(192,57,43,.4)}
+  50%{box-shadow:0 4px 24px rgba(192,57,43,.85)}
+}
+#fab-etichetta{
+  position:fixed;right:20px;bottom:94px;z-index:999;
+  background:rgba(26,42,58,.92);color:#fff;
+  padding:6px 12px;border-radius:8px;
+  font-size:12px;font-weight:500;
+  pointer-events:none;
+  display:none;
+  white-space:nowrap;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+}
+#fab-etichetta.visible{display:block}
+
+/* ===== FAB SEGNA CATTURA (4.3.41) ===== */
+#fab-cattura{
+  position:fixed;right:20px;bottom:100px;z-index:999;
+  width:56px;height:56px;border-radius:50%;
+  background:#e07b39;color:#fff;
+  display:none;align-items:center;justify-content:center;
+  font-size:24px;box-shadow:0 4px 14px rgba(224,123,57,.45);
+  cursor:pointer;user-select:none;touch-action:manipulation;
+  border:3px solid #fff;
+  transition:transform .15s;
+}
+#fab-cattura.mostrato{display:flex}
+#fab-cattura:active{transform:scale(.92)}
+
+/* Toast feedback cattura */
+#cattura-toast{
+  position:fixed;left:50%;bottom:180px;transform:translateX(-50%) translateY(20px);
+  z-index:3000;
+  background:rgba(26,42,58,.95);color:#fff;
+  padding:12px 20px;border-radius:24px;
+  font-size:14px;font-weight:600;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);
+  opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;
+  white-space:nowrap;
+}
+#cattura-toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+#cattura-toast.warn{background:rgba(192,57,43,.95)}
+
+/* ===== POPUP TRACCIATO + PIN CATTURA (4.3.42) ===== */
+.fd-track-popup .leaflet-popup-content-wrapper{border-radius:10px;padding:0;overflow:hidden}
+.fd-track-popup .leaflet-popup-content{margin:0;min-width:240px}
+.fd-popup-header{background:#1e3a5f;color:#fff;padding:10px 12px}
+.fd-popup-date{font-size:14px;font-weight:700}
+.fd-popup-stars{color:#f5b301;letter-spacing:1px;font-size:13px;margin-left:6px}
+.fd-popup-spot{font-size:11px;opacity:.9;margin-top:2px}
+.fd-popup-body{padding:10px 12px;background:#fff}
+.fd-popup-catture{background:#fee2e2;border-left:3px solid #dc2626;padding:6px 8px;border-radius:4px;margin-bottom:8px;font-size:12px;color:#7f1d1d}
+.fd-popup-catture.zero{background:#eff6ff;border-left-color:#1e40af;color:#1e3a5f}
+.fd-popup-metrics{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px;margin-bottom:6px}
+.fd-popup-metric-label{color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+.fd-popup-metric-val{font-weight:700;color:#1e3a5f}
+.fd-popup-conditions{font-size:11px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:6px;margin-top:6px}
+.fd-popup-actions{display:flex;gap:6px;margin-top:10px}
+.fd-popup-btn{
+  flex:1;padding:7px 8px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:6px;
+  font-size:11px;font-weight:600;color:#1e3a5f;text-align:center;cursor:pointer;
+  text-decoration:none;display:block
+}
+.fd-popup-btn.primary{background:#e07b39;border-color:#e07b39;color:#fff}
+.fd-popup-btn:hover{opacity:.9}
+
+/* Pin cattura GPS custom icon */
+.fd-catch-pin-wrap{background:transparent;border:none}
+.fd-catch-pin{
+  background:#dc2626;color:#fff;border-radius:50%;
+  width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;border:3px solid #fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.35)
+}
+
+/* Modal conferma tracciato */
+#trk-modal{
+  display:none;position:fixed;inset:0;z-index:2000;
+  background:rgba(0,0,0,.55);
+  align-items:center;justify-content:center;
+  padding:20px;
+}
+#trk-modal.visible{display:flex}
+#trk-modal-card{
+  background:#fff;border-radius:16px;
+  padding:22px;max-width:360px;width:100%;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+#trk-modal-icon{font-size:36px;text-align:center;margin-bottom:8px}
+#trk-modal-title{font-size:17px;font-weight:600;text-align:center;color:var(--text);margin-bottom:10px}
+#trk-modal-body{font-size:14px;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:18px}
+#trk-modal-actions{display:flex;gap:10px}
+#trk-modal-actions .btn{flex:1;padding:12px;font-size:14px;font-weight:600;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- SCHERMATA PASSWORD -->
+<div id="pwd-screen" style="
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(160deg,#0a1a30 0%,#1a3a5c 60%,#0e2840 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;padding:30px;
+">
+  <div style="font-family:Georgia,serif;font-size:48px;color:#fff;letter-spacing:6px;text-align:center;line-height:1.1;font-weight:700;">FISHING<br>DIARY</div>
+  <div style="width:60px;height:2px;background:linear-gradient(90deg,transparent,#e07b39,transparent);"></div>
+  <div style="font-family:Georgia,serif;font-style:italic;font-size:15px;color:rgba(255,255,255,0.6);text-align:center;">Laguna di Venezia</div>
+  <div style="font-family:Georgia,serif;font-size:13px;color:rgba(255,255,255,0.5);text-align:center;margin-top:4px;">Inserisci la password per accedere</div>
+  <input id="pwd-input" type="password" placeholder="Password"
+    style="
+      width:100%;max-width:280px;padding:14px 18px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.2);
+      border-radius:12px;color:#fff;font-size:16px;
+      text-align:center;outline:none;
+      -webkit-appearance:none;
+    "
+    onkeydown="if(event.key==='Enter')checkPwd()"
+  />
+  <div id="pwd-error" style="color:#e07b39;font-size:13px;min-height:18px;text-align:center;"></div>
+  <button onclick="checkPwd()" style="
+    background:#e07b39;border:none;border-radius:12px;
+    padding:14px 0;color:#fff;font-size:16px;
+    font-family:Georgia,serif;cursor:pointer;
+    width:100%;max-width:280px;
+    touch-action:manipulation;
+  ">Entra 🎣</button>
+  <div style="font-size:11px;color:rgba(255,255,255,0.3);text-align:center;margin-top:6px;">
+    La password è disponibile nel post Facebook
+  </div>
+</div>
+
+<script>
+var _PWD='branzino2026';
+var _PWD_HASH=btoa(_PWD);
+function checkPwd(){
+  var val=document.getElementById('pwd-input').value.trim();
+  if(val===_PWD){
+    localStorage.setItem('fd_pwd_ok',_PWD_HASH);
+    document.getElementById('pwd-screen').style.display='none';
+    var fab=document.getElementById('fab-tracciato');if(fab)fab.classList.add('mostrato');
+  } else {
+    document.getElementById('pwd-error').textContent='Password errata — riprova';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+if(localStorage.getItem('fd_pwd_ok')===_PWD_HASH){
+  document.getElementById('pwd-screen').style.display='none';
+  window.addEventListener('DOMContentLoaded',function(){
+    var fab=document.getElementById('fab-tracciato');if(fab)fab.classList.add('mostrato');
+  });
+}
+</script>
+
+<div class="app">
+
+<div class="header">
+  <svg class="header-bg" viewBox="0 0 880 160" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0d2a4a"/><stop offset="100%" stop-color="#1a5a8a"/></linearGradient>
+      <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a6a9a"/><stop offset="100%" stop-color="#0d3a5c"/></linearGradient>
+      <linearGradient id="sunset" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0d2a4a" stop-opacity="0"/><stop offset="60%" stop-color="#e07b39" stop-opacity="0.3"/><stop offset="100%" stop-color="#f0a500" stop-opacity="0.4"/></linearGradient>
+    </defs>
+    <rect width="880" height="160" fill="url(#sky)"/>
+    <rect width="880" height="160" fill="url(#sunset)"/>
+    <circle cx="760" cy="55" r="22" fill="#f0c060" opacity="0.6"/>
+    <circle cx="760" cy="55" r="18" fill="#f5d070" opacity="0.5"/>
+    <ellipse cx="760" cy="118" rx="18" ry="5" fill="#f0c060" opacity="0.25"/>
+    <circle cx="80" cy="18" r="1.2" fill="#fff" opacity="0.7"/>
+    <circle cx="150" cy="30" r="1" fill="#fff" opacity="0.6"/>
+    <circle cx="220" cy="12" r="1.3" fill="#fff" opacity="0.5"/>
+    <circle cx="320" cy="25" r="1" fill="#fff" opacity="0.6"/>
+    <circle cx="500" cy="35" r="1" fill="#fff" opacity="0.5"/>
+    <circle cx="600" cy="18" r="1.1" fill="#fff" opacity="0.6"/>
+    <rect y="105" width="880" height="55" fill="url(#water)"/>
+    <path d="M0 115 Q40 111 80 115 Q120 119 160 115 Q200 111 240 115 Q280 119 320 115 Q360 111 400 115 Q440 119 480 115 Q520 111 560 115 Q600 119 640 115 Q680 111 720 115 Q760 119 800 115 Q840 111 880 115 L880 160 L0 160Z" fill="#1a5a8a" opacity="0.4"/>
+    <path d="M0 125 Q50 121 100 125 Q150 129 200 125 Q250 121 300 125 Q350 129 400 125 Q450 121 500 125 Q550 129 600 125 Q650 121 700 125 Q750 129 800 125 Q840 121 880 125 L880 160 L0 160Z" fill="#0d3a5c" opacity="0.5"/>
+    <rect x="30" y="82" width="60" height="23" rx="1" fill="#0d2a4a" opacity="0.9"/>
+    <rect x="95" y="75" width="40" height="30" rx="1" fill="#0d2a4a" opacity="0.9"/>
+    <rect x="140" y="80" width="50" height="25" rx="1" fill="#0d2a4a" opacity="0.85"/>
+    <rect x="195" y="72" width="35" height="33" rx="1" fill="#0d2a4a" opacity="0.9"/>
+    <rect x="235" y="78" width="45" height="27" rx="1" fill="#0d2a4a" opacity="0.85"/>
+    <rect x="290" y="48" width="12" height="57" fill="#1a3a5c" opacity="0.95"/>
+    <polygon points="290,48 302,48 296,36" fill="#1a3a5c" opacity="0.95"/>
+    <rect x="287" y="85" width="18" height="4" fill="#2a5298" opacity="0.8"/>
+    <ellipse cx="320" cy="82" rx="18" ry="10" fill="#1a3a5c" opacity="0.9"/>
+    <rect x="305" y="82" width="30" height="23" fill="#1a3a5c" opacity="0.9"/>
+    <rect x="340" y="77" width="30" height="28" rx="1" fill="#0d2a4a" opacity="0.85"/>
+    <rect x="375" y="83" width="25" height="22" rx="1" fill="#0d2a4a" opacity="0.8"/>
+    <g transform="translate(420,52) rotate(-35)">
+      <path d="M0 0 Q30 -12 60 -5 Q72 0 68 10 Q62 20 38 22 Q15 22 0 0Z" fill="#b0c8d8" opacity="0.95"/>
+      <path d="M5 2 Q30 -8 62 2 Q68 6 62 13 Q50 19 30 18 Q12 17 5 2Z" fill="#e8f4f8" opacity="0.7"/>
+      <path d="M8 1 Q35 -9 64 2" stroke="#5a8aaa" stroke-width="1.5" fill="none" opacity="0.8"/>
+      <path d="M18 -1 Q24 -14 32 -8 Q26 -2 18 -1Z" fill="#8aaabb" opacity="0.9"/>
+      <path d="M32 -8 Q42 -18 52 -10 Q46 -4 32 -8Z" fill="#8aaabb" opacity="0.9"/>
+      <path d="M-4 -2 Q-14 -12 -8 0 Q-14 12 -4 4Z" fill="#8aaabb" opacity="0.95"/>
+      <path d="M35 10 Q42 17 48 13 Q42 8 35 10Z" fill="#8aaabb" opacity="0.8"/>
+      <circle cx="62" cy="3" r="3.5" fill="#1a2a3a" opacity="0.9"/>
+      <circle cx="63" cy="2" r="1.2" fill="#fff" opacity="0.9"/>
+      <path d="M70 5 Q74 8 72 11" stroke="#5a7a8a" stroke-width="1.2" fill="none" opacity="0.8"/>
+    </g>
+    <path d="M415 108 Q435 100 455 105 Q470 100 485 106" stroke="#a8d8f0" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M420 114 Q440 108 460 112 Q475 108 488 113" stroke="#a8d8f0" stroke-width="1.2" fill="none" opacity="0.5"/>
+    <ellipse cx="430" cy="103" rx="2.5" ry="4" fill="#a8d8f0" opacity="0.65" transform="rotate(-25,430,103)"/>
+    <ellipse cx="455" cy="100" rx="2" ry="3.5" fill="#a8d8f0" opacity="0.55" transform="rotate(15,455,100)"/>
+    <ellipse cx="478" cy="104" rx="2" ry="3" fill="#a8d8f0" opacity="0.5" transform="rotate(-10,478,104)"/>
+  </svg>
+  <div class="header-content">
+    <div>
+      <div class="header-title">🎣 Fishing Diary</div>
+      <div style="font-size:16px;font-weight:600;color:#fff;opacity:.9;margin-top:4px;text-shadow:0 1px 3px rgba(0,0,0,.4);padding-left:1.6em">Laguna di Venezia</div>
+      <div style="font-size:12px;color:#fff;opacity:.85;margin-top:4px;padding-left:1.6em;letter-spacing:.05em;text-shadow:0 1px 3px rgba(0,0,0,.4)">vers. 4.3.65 · <a href="https://docs.google.com/forms/d/e/1FAIpQLSdixNuJt0e-KEVQgPTVMowOy4RxPMTRqrkozU_R-AoeFHy4zA/viewform?usp=header" target="_blank" style="color:#fff;opacity:.9;text-decoration:underline">✉️ Segnala un problema</a></div>
+      <div class="header-info" style="margin-top:8px">I dati vengono salvati nel browser. <b>Esporta</b> regolarmente in JSON/CSV per non perderli.</div>
+    </div>
+    <div class="header-pescatore">
+      <label for="nome-pescatore">Pescatore</label>
+      <input type="text" id="nome-pescatore" placeholder="Il tuo nome..." oninput="salvaPescatore()"/>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <div class="btn btn-sm" style="background:rgba(0,0,0,.4);color:#fff;border:1.5px solid #fff;font-size:11px" onclick="esportaCSV()">⬇ CSV</div>
+        <div class="btn btn-sm" style="background:rgba(0,0,0,.4);color:#fff;border:1.5px solid #fff;font-size:11px" onclick="esportaJSON()">⬇ JSON</div>
+        <div class="btn btn-sm" style="background:rgba(0,0,0,.4);color:#fff;border:1.5px solid #fff;font-size:11px" onclick="importaJSON()">⬆ Import</div>
+      </div>
+      <input type="file" id="import-json-input" accept=".json" style="display:none" onchange="leggiImportJSON(this)"/>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPanel('guida',this)">📖 Guida</div>
+  <div class="tab" onclick="showPanel('nuova',this)">✏️ Nuova</div>
+  <div class="tab" onclick="showPanel('storico',this)">📋 Storico</div>
+  <div class="tab" onclick="showPanel('mappa',this)">📍 Mappa</div>
+  <div class="tab" onclick="showPanel('statistiche',this)">📊 Stats</div>
+  <div class="tab" onclick="showPanel('previsione',this)">🔮 Previsione</div>
+</div>
+
+<!-- GUIDA -->
+<div id="panel-guida" class="panel active">
+  <div class="card">
+    <div class="section-title">Benvenuto nel Diario di Pesca</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Questa app ti permette di registrare le tue uscite di pesca nella Laguna di Venezia — condizioni meteo, marea, esche, catture e spot. Qui trovi tutto quello che ti serve per usarla al meglio.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">L'app è stata concepita per essere utilizzata da telefono per contestualizzare tutte le informazioni nel momento dell'attività di pesca.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">L'app comunque funziona su qualsiasi dispositivo e browser — iPhone, Android, MacBook, Windows — semplicemente aprendo il link. Non serve installare nulla.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">💡 Salva il link nei preferiti del browser per averlo sempre a portata di mano.</p>
+  </div>
+  <div class="card">
+    <div class="section-title">💾 Salvataggio dati</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Quando premi <b>💾 Salva uscita</b>, i tuoi dati vengono salvati automaticamente nella <b>memoria interna del browser</b> che stai usando — Chrome, Safari, Edge e così via. Non serve creare un account, non serve internet, non serve fare nulla di speciale: il salvataggio avviene in automatico.</p>
+
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:10px"><b>Dove si trovano fisicamente i dati?</b><br>
+    I dati non sono in una cartella del tuo telefono o computer che puoi aprire come un file. Sono nascosti dentro il browser stesso, in uno spazio riservato chiamato <i>storage locale</i>. Non li vedrai mai come file sul desktop — esistono solo dentro quella app browser, su quel dispositivo.</p>
+
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:10px"><b>⚠️ Cosa significa in pratica — leggi con attenzione:</b></p>
+    <ul style="font-size:14px;line-height:2;color:var(--text);padding-left:1.2rem;margin-top:4px">
+      <li>Se usi <b>Chrome sul telefono</b> e poi apri l'app su <b>Safari</b>, i dati non ci sono — ogni browser ha la sua memoria separata.</li>
+      <li>Se <b>disinstalli il browser</b> o <b>cancelli i dati di navigazione</b> (la "pulizia" del browser), perdi tutto.</li>
+      <li>Se <b>cambi telefono</b> o <b>cambi computer</b>, i dati non si trasferiscono da soli.</li>
+      <li>I dati salvati sul <b>telefono</b> non sono visibili sul <b>computer</b> e viceversa — ogni dispositivo ha la sua memoria indipendente. Puoi trasferirli e <b>unirli</b> usando l'esportazione e l'importazione JSON (vedi sotto).</li>
+      <li>Se qualcun altro usa lo stesso browser sullo stesso dispositivo, potrebbe vedere i tuoi dati.</li>
+    </ul>
+
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:10px"><b>✅ Come mettere i dati al sicuro — esporta in JSON</b><br>
+    Vai nella scheda <b>📋 Storico</b> e premi il pulsante <b>⬇ JSON</b>. Verrà scaricato un file con il nome del dispositivo e la data, es. <i>diario_pesca_iPhone_21-03-2026.json</i>, nella cartella <b>Download</b> del tuo dispositivo. Quel file contiene tutto il tuo diario e puoi:</p>
+    <ul style="font-size:14px;line-height:2;color:var(--text);padding-left:1.2rem;margin-top:4px">
+      <li>Tenerlo come <b>backup</b> di sicurezza</li>
+      <li>Copiarlo su un altro dispositivo</li>
+      <li>Inviarlo a <b>un'AI</b> per ottenere analisi, statistiche e report mensili sulle tue uscite</li>
+      <li>Importarlo in <b>Excel o Google Sheets</b> tramite il formato CSV per analisi personalizzate</li>
+    </ul>
+
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:10px"><b>🔀 Usare l'app su più dispositivi — come unire i dati</b><br>
+    Se registri uscite sia dal telefono che dal computer, puoi unire i dati in qualsiasi momento senza perdere nulla. Il pulsante <b>⬆ Import</b> non sovrascrive — <b>aggiunge</b> le uscite del file importato a quelle già presenti, ignorando automaticamente i duplicati.<br><br>
+    Esempio pratico: hai 7 uscite sul telefono e 10 sul computer. Esporti il JSON dal telefono, lo importi sul computer → il computer avrà 17 uscite. Poi esporti dal computer e importi sul telefono → anche il telefono avrà 17 uscite. I due dispositivi sono allineati.</p>
+
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:10px"><b>📅 Quando esportare?</b> Dopo ogni uscita importante, o almeno una volta al mese. Trattalo come una fotografia del tuo diario — se il telefono si rompe o il browser si resetta, hai tutto al sicuro.</p>
+
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:10px"><b>Dove trovo il file scaricato?</b><br>
+    <b>iPhone:</b> apri l'app <i>File</i> → <i>Download</i>. Se non lo trovi, cerca "diario_pesca" usando la lente in alto.<br>
+    <b>Android:</b> apri l'app <i>File</i> (o <i>Gestione file</i>) → cartella <i>Download</i>.<br>
+    <b>Computer (Windows o Mac):</b> apri la cartella <i>Download</i> dal desktop o dall'esplora risorse.</p>
+  </div>
+  <div class="card">
+    <div class="section-title">✏️ Nuova uscita</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Compila i campi dall'alto verso il basso: data, zona, spot, meteo e marea, tecnica ed esche, e infine le catture.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Come registrare le catture:</b> compila i campi specie, peso, lunghezza ed esca. Se hai più catture, premi <b>💾 Salva cattura — aggiungine un'altra</b> per ogni pesce intermedio: i campi si azzerano e sei pronto per il successivo. Sull'ultima cattura premi <b>✅ Salva cattura e chiudi uscita</b> — salva l'ultima cattura e tutta l'uscita in un colpo solo.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Selezione spot:</b> il campo Spot mostra un menu con tutti gli spot che hai salvato. Selezionando uno spot, le coordinate GPS si compilano automaticamente. Se non hai ancora spot salvati, premi il pulsante <b>🗺 Mappa</b> accanto al menu per aggiungerne uno.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>📍 Rileva GPS nella cattura:</b> premilo nel momento esatto della cattura per salvare automaticamente le coordinate del punto. Il browser chiederà il permesso di accedere alla posizione: accettalo per abilitare la funzione. Dopo il rilevamento compare un piccolo riquadro <b>"Salva come spot?"</b> — puoi dare un nome allo spot (oppure lasciare il campo vuoto per usare la data come nome) e premere <b>✓ Salva</b>: il punto viene aggiunto all'elenco degli spot e sarà visibile nella Mappa e nel menu di selezione. Se non vuoi salvarlo, premi ✕ per chiudere il riquadro.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">⚠️ Il GPS funziona meglio all'aperto. <b>iPhone:</b> precisione ottima in laguna (5–15m) — assicurati di aver dato il permesso di localizzazione a Chrome/Safari nelle impostazioni del telefono. <b>Android:</b> precisione analoga all'iPhone — abilita la localizzazione nelle impostazioni di sistema e concedi il permesso al browser. <b>MacBook:</b> usa il Wi-Fi positioning, precisione inferiore (50–200m), sconsigliato per georeferenziare uno spot preciso in laguna. <b>Windows:</b> comportamento simile al MacBook se non è presente un modulo GPS dedicato — utile solo per usi non precisi.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">I campi meteo e marea puoi compilarli consultando i <b>link esterni</b> presenti nella sezione Meteo &amp; Marea — si aprono direttamente nel browser.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">⚠️ <b>GPS da Facebook o WhatsApp:</b> se apri l'app dal link condiviso su Facebook o WhatsApp, il GPS potrebbe non funzionare — questi app usano un browser interno che blocca la localizzazione. Soluzione: apri il link in <b>Safari</b> (iPhone) o <b>Chrome</b> (Android).</p>
+  </div>
+  <div class="card">
+    <div class="section-title">🔗 Link esterni</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Nella sezione Meteo &amp; Marea trovi link a:</p>
+    <ul style="font-size:14px;line-height:2;color:var(--text);margin-top:6px;padding-left:1.2rem">
+      <li><b>Centro Maree Venezia</b> — dati ufficiali in tempo reale su livello e previsioni marea</li>
+      <li><b>Windy / Windfinder</b> — vento e meteo con mappa, preimpostati sulla laguna</li>
+      <li><b>Moon Phases / Time and Date</b> — fase lunare del giorno, utile per prevedere l'attività delle spigole</li>
+      <li><b>Webcam Laguna Nord – Cantieri Biasin</b> — diretta video con vista sulla laguna, utile per valutare vento e condizioni prima di uscire</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="section-title">📍 Mappa spot</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Nella scheda Mappa trovi tutti i tuoi spot salvati, sia quelli creati manualmente che quelli rilevati con il GPS durante una cattura. Tutti condividono lo stesso elenco e sono disponibili nel menu di selezione della tab Nuova.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Colore dei marker:</b> i marker sulla mappa hanno colori diversi in base all'origine. <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2a5298;vertical-align:middle;margin-right:3px"></span><b style="color:#2a5298">Blu</b> = spot creato manualmente cliccando sulla mappa. <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#e07b39;vertical-align:middle;margin-right:3px"></span><b style="color:#e07b39">Arancio</b> = spot rilevato in barca con il GPS tramite il pulsante Rileva. La stessa distinzione è visibile nella lista sotto la mappa con i badge <b>Manuale</b> e <b>GPS</b>.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Aggiungere uno spot manualmente:</b> clicca su un punto della mappa — apparirà un marker trascinabile con le coordinate esatte. Puoi spostarlo per affinare la posizione, poi inserisci il nome dello spot e premi <b>✓ Salva</b>. La data viene salvata automaticamente.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Popup spot:</b> cliccando su un marker già salvato vedi nome, origine (Manuale o GPS), data di creazione e coordinate. Gli spot creati prima di questo aggiornamento mostreranno solo nome e coordinate, con marker blu di default.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">⚠️ La mappa richiede connessione internet per caricare le tiles geografiche.</p>
+  </div>
+  <div class="card">
+    <div class="section-title">📋 Storico</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Qui trovi tutte le uscite salvate in ordine cronologico. Puoi filtrare per testo o per zona. Ogni uscita ha un pulsante <b>Elimina</b> per cancellarla singolarmente.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">Il pulsante <b>🗑 Reset</b> cancella TUTTE le uscite — richiede doppia conferma. Usalo solo dopo aver esportato i dati.</p>
+  </div>
+  <div class="card">
+    <div class="section-title">📊 Statistiche</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Il pannello Statistiche elabora automaticamente tutti i dati delle uscite salvate e mostra un riepilogo visivo della tua attività di pesca.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Riepilogo generale:</b> numero totale di uscite, catture complessive e peso totale stimato.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Grafici:</b> catture per mese e catture per zona, utili per individuare i periodi e le aree più produttivi.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Correlazioni:</b> media di catture per condizione meteo (cielo, marea, fase lunare) — ti aiutano a capire in quali condizioni peschi meglio.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Tasso di successo per spot:</b> per ogni spot, mostra la percentuale di uscite andate a segno. Questa sezione compare solo se hai almeno 2 uscite registrate <b>nello stesso spot</b> — solo allora è possibile calcolare una percentuale significativa. Utile per confrontare la produttività dei diversi punti di pesca.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Miglior fascia oraria:</b> media di catture per fascia oraria (mattino, tarda mattina, pomeriggio, sera, notte) — visibile solo se hai registrato l'orario nelle uscite.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px"><b>Combinazioni esca + zona più produttive:</b> le 5 combinazioni esca/zona con la media catture più alta. Questa sezione compare solo se hai almeno 2 uscite in cui hai usato la <b>stessa esca nella stessa zona</b> — solo allora è possibile calcolare una media significativa. Ti suggerisce cosa usare e dove.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:10px">⚠️ Le statistiche si aggiornano in tempo reale ad ogni nuova uscita salvata. Con poche uscite i dati sono orientativi — più uscite registri, più le analisi diventano significative.</p>
+  </div>
+  <div class="card">
+    <div class="section-title">🤖 Report mensile con AI</div>
+    <p style="font-size:14px;line-height:1.7;color:var(--text)">Una volta al mese puoi inviare a <b>qualsiasi AI</b> il file <b>JSON</b> esportato dallo Storico, insieme alle foto delle catture scattate con il telefono (non serve rinominarle). L'AI abbina le foto alle uscite tramite la data e genera un report completo con statistiche, analisi meteo, catture e considerazioni sulle sessioni.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:12px"><b>📊 Analisi con Excel o Google Sheets</b><br>
+    Vai nella scheda <b>📋 Storico</b> e premi il pulsante <b>⬇ CSV</b>. Verrà scaricato un file <i>diario_pesca.csv</i> che puoi aprire direttamente in Excel, Numbers o Google Sheets. Una volta aperto puoi:</p>
+    <ul style="font-size:14px;line-height:2;color:var(--text);padding-left:1.2rem;margin-top:4px">
+      <li>Filtrare le uscite per zona, mese o condizioni meteo</li>
+      <li>Creare grafici su catture, peso medio, uscite per mese</li>
+      <li>Calcolare medie e totali (es. kg totali pescati, tasso di cattura per zona)</li>
+      <li>Confrontare stagioni diverse affiancando i dati</li>
+    </ul>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:8px">💡 <b>Suggerimento:</b> usa il CSV per Excel, il JSON per l'AI — contengono gli stessi dati ma in formato diverso.</p>
+    <p style="font-size:14px;line-height:1.7;color:var(--text);margin-top:12px">🚀 <b>Pronto a iniziare?</b> Clicca su <b>✏️ Nuova</b> in alto — bastano data, zona e almeno una cattura per cominciare.</p>
+  </div>
+</div>
+
+<!-- NUOVA USCITA -->
+<div id="panel-nuova" class="panel">
+  <div class="card">
+    <div class="section-title">Uscita</div>
+    <div style="margin-bottom:12px">
+      <div class="btn" style="font-size:13px;background:#eef4fb;color:var(--blu2);border-color:#c2d8f0;width:100%;text-align:center" onclick="ripetiUltimaUscita()">🔁 Ripeti ultima uscita</div>
+    </div>
+    <div class="row">
+      <div><label>Data</label><input type="date" id="data" onchange="rilevafaseLunare()"/></div>
+      <div><label>Ora partenza</label>
+        <input type="time" id="ora" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fafcff;color:var(--text)"/>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Zona</label>
+        <div class="sel-wrap"><select id="zona">
+          <option value="">Seleziona zona...</option>
+          <option>Laguna Nord</option><option>Laguna Centro</option><option>Laguna Sud</option>
+          <option>Canale dei Petroli</option><option>Canale di Malamocco</option>
+          <option>Canale Melison</option><option>Canale Fisolo</option><option>Canale Spignon</option>
+          <option>San Leonardo</option><option>Porto Marghera</option>
+          <option>Punta Sabbioni</option><option>Chioggia</option>
+          <option>Bocca di Lido</option><option>Bocca di Malamocco</option>
+          <option>Spot personalizzato</option>
+        </select></div>
+      </div>
+      <div>
+        <label>Spot</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div class="sel-wrap" style="flex:1"><select id="spot" onchange="onSpotChange(this)">
+            <option value="">Seleziona spot...</option>
+          </select></div>
+          <div class="btn btn-sm" style="white-space:nowrap;font-size:12px" onclick="showPanel('mappa',document.querySelectorAll('.tab')[3])">🗺 Mappa</div>
+        </div>
+        <div id="spot-empty-msg" style="display:none;font-size:11px;color:#e07b39;margin-top:4px">⚠️ Nessuno spot salvato — aggiungine uno dalla Mappa.</div>
+      </div>
+    </div>
+    <div><label>Coordinate GPS spot</label>
+      <div class="row">
+        <input type="text" id="lat" placeholder="Lat." readonly style="background:#f4f7fa;color:var(--muted)"/>
+        <input type="text" id="lon" placeholder="Lon." readonly style="background:#f4f7fa;color:var(--muted)"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="meteo-header" onclick="toggleMeteo()" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;cursor:pointer;user-select:none;touch-action:manipulation">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:600;color:var(--azzurro);text-transform:uppercase;letter-spacing:.08em">Meteo &amp; Marea</span>
+        <span id="meteo-badge" style="display:none;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:#e8f5ee;color:#2d7a4a">✓ Compilato</span>
+      </div>
+      <span id="meteo-chevron" style="font-size:13px;color:var(--muted)">▲</span>
+    </div>
+    <div id="meteo-body" style="padding:0 1.25rem 1.25rem;border-top:1px solid var(--border)">
+    <div class="row3">
+      <div><label>Temp. aria (°C)</label>
+        <div class="sel-wrap"><select id="temp">
+          <option value="">—</option>
+          <option>-10°</option><option>-8°</option><option>-6°</option><option>-4°</option><option>-2°</option>
+          <option>0°</option><option>2°</option><option>4°</option><option>6°</option><option>8°</option>
+          <option>10°</option><option>12°</option><option>14°</option><option>16°</option><option>18°</option>
+          <option>20°</option><option>22°</option><option>24°</option><option>26°</option><option>28°</option>
+          <option>30°</option><option>32°</option><option>34°</option><option>36°</option><option>38°</option><option>40°</option>
+        </select></div>
+      </div>
+      <div><label>Vento (km/h)</label>
+        <div class="sel-wrap"><select id="vento_vel">
+          <option value="">—</option>
+          <option>0</option><option>5</option><option>10</option><option>15</option><option>20</option>
+          <option>25</option><option>30</option><option>35</option><option>40</option><option>45</option>
+          <option>50</option><option>60</option><option>70</option><option>80</option><option>&gt; 80</option>
+        </select></div>
+      </div>
+      <div><label>Temp. acqua (°C)</label>
+        <div class="sel-wrap"><select id="temp_acqua">
+          <option value="">—</option>
+          <option>0°</option><option>2°</option><option>4°</option><option>6°</option><option>8°</option>
+          <option>10°</option><option>12°</option><option>14°</option><option>16°</option><option>18°</option>
+          <option>20°</option><option>22°</option><option>24°</option><option>26°</option><option>28°</option>
+          <option>30°</option><option>32°</option><option>34°</option>
+        </select></div>
+      </div>
+    </div>
+    <div><label>Direzione vento</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
+        <div class="dir-btn" onclick="selDir(this,'N')">N</div><div class="dir-btn" onclick="selDir(this,'NE')">NE</div>
+        <div class="dir-btn" onclick="selDir(this,'E')">E</div><div class="dir-btn" onclick="selDir(this,'SE')">SE</div>
+        <div class="dir-btn" onclick="selDir(this,'S')">S</div><div class="dir-btn" onclick="selDir(this,'SO')">SO</div>
+        <div class="dir-btn" onclick="selDir(this,'O')">O</div><div class="dir-btn" onclick="selDir(this,'NO')">NO</div>
+      </div>
+    </div>
+    <div class="row3" style="margin-top:10px">
+      <div><label>Visibilità</label><div class="sel-wrap"><select id="visibilita"><option value="">—</option><option>Ottima</option><option>Buona</option><option>Ridotta</option><option>Foschia</option></select></div></div>
+      <div><label>Cielo</label><div class="sel-wrap"><select id="cielo"><option value="">—</option><option>Sereno</option><option>Parz. nuvoloso</option><option>Nuvoloso</option><option>Coperto</option><option>Pioggia</option></select></div></div>
+      <div><label>Condizioni acqua</label><div class="sel-wrap"><select id="mare"><option value="">—</option><option>Calma</option><option>Poco mossa</option><option>Mossa</option><option>Agitata</option></select></div></div>
+    </div>
+    <div style="margin-top:10px"><label>Fase marea</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+        <div class="tog" onclick="selMarea(this,'inizio_crescente')">↗ Inizio crescente</div>
+        <div class="tog" onclick="selMarea(this,'crescente')">↑ Crescente</div>
+        <div class="tog" onclick="selMarea(this,'fine_crescente')">↑ Fine crescente</div>
+        <div class="tog" onclick="selMarea(this,'inizio_calante')">↘ Inizio calante</div>
+        <div class="tog" onclick="selMarea(this,'calante')">↓ Calante</div>
+        <div class="tog" onclick="selMarea(this,'fine_calante')">↓ Fine calante</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div>
+        <label>Livello marea (cm)</label>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Altezza acqua rispetto allo zero mareografico (Punta della Salute).</div>
+        <div class="sel-wrap"><select id="livello_marea">
+          <option value="">—</option>
+          <option>-50</option><option>-40</option><option>-30</option><option>-20</option><option>-10</option>
+          <option>0</option><option>+10</option><option>+20</option><option>+30</option><option>+40</option>
+          <option>+50</option><option>+60</option><option>+70</option>
+          <option>+80 ⚠ attenzione</option><option>+90</option><option>+100</option>
+          <option>+110 ⚠ allarme</option><option>+120</option><option>+130</option>
+          <option>+140 🔴 eccezionale</option><option>+150</option><option>+160</option>
+          <option>+170</option><option>+180</option><option>+190</option><option>+200</option>
+        </select></div>
+      </div>
+
+    </div>
+    <div style="margin-top:10px"><label>Fase lunare</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center">
+        <div class="tog tog-luna" id="tog-luna-nuova" style="cursor:default;opacity:.7">🌑 Nuova</div>
+        <div class="tog tog-luna" id="tog-luna-crescente" style="cursor:default;opacity:.7">🌒 Crescente</div>
+        <div class="tog tog-luna" id="tog-luna-piena" style="cursor:default;opacity:.7">🌕 Piena</div>
+        <div class="tog tog-luna" id="tog-luna-calante" style="cursor:default;opacity:.7">🌘 Calante</div>
+      </div>
+      <div id="luna-auto-msg" style="font-size:12px;color:var(--blu2);margin-top:6px;line-height:1.6"></div>
+    </div>
+    <div style="margin-top:10px"><label>Pressione atmosferica</label><div class="sel-wrap"><select id="pressione"><option value="">—</option><option>In aumento</option><option>Stabile</option><option>In calo</option></select></div></div>
+    <div style="margin-top:14px;padding:12px;background:#f0f6ff;border-radius:10px;border:1px solid #c8ddf5">
+      <div style="font-size:11px;font-weight:600;color:var(--azzurro);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🔗 Consulta dati esterni</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">Marea — Laguna di Venezia</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+        <a href="https://www.comune.venezia.it/it/content/centro-previsioni-e-segnalazioni-maree" target="_blank" style="padding:5px 10px;background:#fff;border:1px solid #c8ddf5;border-radius:7px;font-size:12px;color:var(--blu2);text-decoration:none">🌊 Centro Maree Venezia</a>
+        <a href="https://it.tideschart.com/Italy/Veneto/Provincia-di-Venezia/Venezia/" target="_blank" style="padding:5px 10px;background:#fff;border:1px solid #c8ddf5;border-radius:7px;font-size:12px;color:var(--blu2);text-decoration:none">📈 Orari alta/bassa marea oggi</a>
+        <a href="https://www.windy.com/?45.441,12.316,12" target="_blank" style="padding:5px 10px;background:#fff;border:1px solid #c8ddf5;border-radius:7px;font-size:12px;color:var(--blu2);text-decoration:none">💨 Windy</a>
+        <a href="https://www.cantieribiasin.it/webcam/" target="_blank" style="padding:5px 10px;background:#fff;border:1px solid #c8ddf5;border-radius:7px;font-size:12px;color:var(--blu2);text-decoration:none">📹 Webcam Laguna Nord – Cantieri Biasin</a>
+        <a href="https://www.windfinder.com/#12/45.4408/12.3155" target="_blank" style="padding:5px 10px;background:#fff;border:1px solid #c8ddf5;border-radius:7px;font-size:12px;color:var(--blu2);text-decoration:none">🌬 Windfinder</a>
+        <a href="https://www.circolovelamestre.it/web-cam-polo-nautico-sportivo-venezia/" target="_blank" style="padding:5px 10px;background:#fff;border:1px solid #c8ddf5;border-radius:7px;font-size:12px;color:var(--blu2);text-decoration:none">⛵ Vela Mestre</a>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">Luna</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <a href="https://www.timeanddate.com/moon/italy/venice" target="_blank" style="padding:5px 10px;background:#fff;border:1px solid #c8ddf5;border-radius:7px;font-size:12px;color:var(--blu2);text-decoration:none">🌕 Fase lunare Venezia</a>
+      </div>
+    </div>
+    </div><!-- fine meteo-body -->
+  </div>
+
+  <div class="card">
+    <div class="section-title">Tecnica &amp; Note</div>
+    <div class="row">
+      <div><label>Tecnica</label><div class="sel-wrap"><select id="tecnica">
+        <option>Spinning da barca</option><option>Spinning da riva</option>
+        <option>Slow jig</option><option>Topwater</option><option>Minnow affondante</option>
+        <option>Bolognese</option><option>Pesca a fondo</option>
+      </select></div></div>
+    </div>
+    <div><label>Note uscita</label><textarea id="note" placeholder="Condizioni, comportamento pesce, esche usate..."></textarea></div>
+    <div style="margin-top:10px"><label>Voto uscita</label>
+      <div class="voto-row">
+        <div class="voto-opt" onclick="selVoto(this,1)">★ Pessima</div>
+        <div class="voto-opt" onclick="selVoto(this,2)">★★ Scarsa</div>
+        <div class="voto-opt sel" onclick="selVoto(this,3)">★★★ Buona</div>
+        <div class="voto-opt" onclick="selVoto(this,4)">★★★★ Ottima</div>
+        <div class="voto-opt" onclick="selVoto(this,5)">★★★★★ Top</div>
+      </div>
+      <input type="hidden" id="voto" value="3"/>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Catture</div>
+    <div id="catture-lista"></div>
+    <div class="catture-form">
+      <div style="font-size:12px;font-weight:600;color:var(--azzurro);margin-bottom:10px">🐟 Registra cattura — premi Salva per aggiungerne una, poi ripeti per le successive</div>
+      <div class="row3">
+        <div><label>Specie</label><div class="sel-wrap"><select id="c_specie">
+          <option value="">Seleziona...</option>
+          <option>Spigola (Branzino)</option><option>Orata</option><option>Cefalo</option>
+          <option>Leccia</option><option>Serra</option><option>Ombrina</option>
+          <option>Seppia</option><option>Calamaro</option><option>Anguilla</option><option>Altra</option>
+        </select></div></div>
+        <div><label>Peso</label><div class="sel-wrap"><select id="c_peso">
+          <option value="">—</option>
+          <option>100 g</option><option>200 g</option><option>300 g</option><option>400 g</option>
+          <option>500 g</option><option>600 g</option><option>700 g</option><option>800 g</option>
+          <option>900 g</option><option>1 kg</option><option>1.2 kg</option><option>1.5 kg</option>
+          <option>1.8 kg</option><option>2 kg</option><option>2.5 kg</option><option>3 kg</option>
+          <option>3.5 kg</option><option>4 kg</option><option>5 kg</option><option>&gt; 5 kg</option>
+        </select></div></div>
+        <div><label>Lunghezza</label><div class="sel-wrap"><select id="c_lunghezza">
+          <option value="">—</option>
+          <option>20 cm</option><option>25 cm</option><option>30 cm</option><option>35 cm</option>
+          <option>40 cm</option><option>42 cm</option><option>44 cm</option><option>46 cm</option>
+          <option>48 cm</option><option>50 cm</option><option>52 cm</option><option>54 cm</option>
+          <option>56 cm</option><option>58 cm</option><option>60 cm</option><option>65 cm</option>
+          <option>70 cm</option><option>75 cm</option><option>80 cm</option><option>&gt; 80 cm</option>
+        </select></div></div>
+      </div>
+      <div class="row">
+        <div><label>Esca</label><div class="sel-wrap"><select id="c_esca">
+          <option value="">Seleziona...</option>
+          <option>Jerk</option><option>Minnow</option><option>WTD</option>
+          <option>Popper</option><option>Gomma</option><option>Jig</option><option>Streamer</option>
+          <option>Verme</option><option>Corbola</option><option>Cefaletto</option><option>Ghiozzo</option>
+          <option>Altro</option>
+        </select></div></div>
+        <div><label>Marca</label><input type="text" id="c_esca_marca" placeholder="es. Deps, Megabass..."/></div>
+      </div>
+      <div class="row">
+        <div><label>Taglia esca</label><div class="sel-wrap"><select id="c_esca_taglia">
+          <option value="">Seleziona...</option>
+          <option>5 cm</option><option>7 cm</option><option>9 cm</option><option>10 cm</option>
+          <option>11 cm</option><option>12 cm</option><option>12,5 cm</option><option>14 cm</option>
+          <option>14,5 cm</option><option>16 cm</option><option>18 cm</option><option>20 cm</option><option>Altro</option>
+        </select></div></div>
+      </div>
+      <div style="margin-top:10px"><label>Colore esca</label>
+        <div id="c_esca_colore_wrap" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px">
+          <div class="tog" onclick="togColoreCattura(this,'Bianco')">Bianco</div>
+          <div class="tog" onclick="togColoreCattura(this,'Bianco perlato')">Bianco perlato</div>
+          <div class="tog" onclick="togColoreCattura(this,'Naturale')">Naturale</div>
+          <div class="tog" onclick="togColoreCattura(this,'Verde naturale')">Verde naturale</div>
+          <div class="tog" onclick="togColoreCattura(this,'Giallo')">Giallo</div>
+          <div class="tog" onclick="togColoreCattura(this,'Giallo/Bianco')">Giallo/Bianco</div>
+          <div class="tog" onclick="togColoreCattura(this,'Oro')">Oro</div>
+          <div class="tog" onclick="togColoreCattura(this,'Verde/Bianco')">Verde/Bianco</div>
+          <div class="tog" onclick="togColoreCattura(this,'Verde/Oro')">Verde/Oro</div>
+          <div class="tog" onclick="togColoreCattura(this,'Fluo')">Fluo</div>
+          <div class="tog" onclick="togColoreCattura(this,'Chartreuse')">Chartreuse</div>
+          <div class="tog" onclick="togColoreCattura(this,'Blu/Viola')">Blu/Viola</div>
+          <div class="tog" onclick="togColoreCattura(this,'Blu')">Blu</div>
+          <div class="tog" onclick="togColoreCattura(this,'Azzurro sardina')">Azzurro sardina</div>
+          <div class="tog" onclick="togColoreCattura(this,'Aju')">Aju</div>
+          <div class="tog" onclick="togColoreCattura(this,'Nero')">Nero</div>
+          <div class="tog" onclick="togColoreCattura(this,'Altro')">Altro</div>
+        </div>
+        <input type="hidden" id="c_esca_colore" value=""/>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label>Esito</label><div class="sel-wrap"><select id="c_esito"><option>Trattenuta</option><option>Rilasciata C&R</option></select></div></div>
+        <div><label>Spot cattura</label><div class="sel-wrap"><select id="c_spot_cattura"><option value="">— spot uscita —</option></select></div></div>
+      </div>
+      <div><label>Note cattura</label><input type="text" id="c_note" placeholder="es. Presa sotto diga..."/></div>
+      <div style="margin-top:10px">
+        <label>📍 Coordinate cattura (GPS)</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+          <input type="text" id="c_lat" placeholder="Latitudine" style="flex:1" readonly/>
+          <input type="text" id="c_lon" placeholder="Longitudine" style="flex:1" readonly/>
+          <div class="btn btn-sm btn-primary" style="white-space:nowrap" onclick="rilevaPosizione()">📍 Rileva</div>
+        </div>
+        <div id="gps-status" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+      </div>
+      <div id="gps-spot-wrapper" style="overflow:hidden;max-width:100%;box-sizing:border-box"></div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+        <div class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;text-align:center" onclick="aggiungiCattura()">💾 Salva cattura — aggiungine un'altra</div>
+        <div class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;text-align:center;background:#1a5c2a;border-color:#1a5c2a" onclick="salvaUltimaEChiudi()">✅ Salva cattura e chiudi uscita</div>
+        <div id="cattura-saved-msg" style="display:none;text-align:center;font-size:13px;color:#2d7a4a;margin-top:4px;font-weight:600">✅ Cattura salvata — puoi aggiungerne un'altra</div>
+        <div id="ripeti-btn-wrap" style="display:none;margin-top:8px"><div class="btn" style="width:100%;padding:10px;font-size:14px;text-align:center;background:var(--bg2);border:1px solid var(--azzurro);color:var(--azzurro)" onclick="ripetUltima()">🔁 Ripeti ultima cattura</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <div class="btn" onclick="resetForm()">Annulla</div>
+  </div>
+</div>
+
+<!-- STORICO -->
+<div id="panel-storico" class="panel">
+  <div class="filter-bar">
+    <input type="text" id="filtro-testo" placeholder="🔍 Cerca..." style="flex:1;min-width:120px" oninput="renderStorico()"/>
+    <div class="sel-wrap" style="flex:1;min-width:120px"><select id="filtro-zona" onchange="renderStorico()">
+      <option value="">Tutte le zone</option>
+      <option>Laguna Nord</option><option>Laguna Centro</option><option>Laguna Sud</option>
+      <option>Canale dei Petroli</option><option>Canale di Malamocco</option>
+      <option>Canale Melison</option><option>Canale Fisolo</option><option>Canale Spignon</option>
+      <option>San Leonardo</option><option>Porto Marghera</option>
+      <option>Punta Sabbioni</option><option>Chioggia</option>
+      <option>Bocca di Lido</option><option>Bocca di Malamocco</option>
+    </select></div>
+    <div class="sel-wrap" style="flex:1;min-width:120px"><select id="filtro-specie" onchange="renderStorico()">
+      <option value="">Tutte le specie</option>
+      <option>Spigola / Branzino</option><option>Orata</option><option>Luccio</option>
+      <option>Persico</option><option>Carpa</option><option>Anguilla</option>
+      <option>Cefalo</option><option>Passera</option><option>Sogliola</option>
+      <option>Seppie</option><option>Calamaro</option><option>Altro</option>
+    </select></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <input type="date" id="filtro-da" onchange="renderStorico()" style="padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fafcff;color:var(--text)" title="Da data"/>
+      <input type="date" id="filtro-a" onchange="renderStorico()" style="padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fafcff;color:var(--text)" title="A data"/>
+      <div class="btn btn-sm" onclick="esportaCSV()">⬇ CSV</div>
+      <div class="btn btn-sm" onclick="esportaJSON()">⬇ JSON</div>
+      <div class="btn btn-sm btn-danger" onclick="cancellatutti()">🗑 Reset</div>
+    </div>
+  </div>
+
+  <!-- ===== SEZIONE TRACCIATI GPS (spostata in cima, sopra elenco uscite) ===== -->
+  <div class="card" style="margin-top:12px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="trkToggleSezione()">
+      <div class="section-title" style="margin-bottom:0">🛰 Tracciati GPS <span id="trk-sezione-count" style="font-weight:400;color:var(--muted)">(0)</span> <span id="trk-sezione-totkm" style="font-weight:400;color:var(--muted);font-size:13px"></span></div>
+      <span id="trk-sezione-chevron" style="font-size:13px;color:var(--muted)">▼</span>
+    </div>
+    <div id="trk-sezione-body" style="display:none;margin-top:12px">
+      <div id="trk-lista"></div>
+    </div>
+  </div>
+
+  <div id="storico-lista"></div>
+</div>
+
+<!-- 4.3.63: rimosso blocco #spot-overlay orfano (funzioni salvaSpotOverlay/annullaSpotOverlay non definite, codice morto). L'aggiunta spot da mappa usa apriOverlaySpot() con prompt() nativo. -->
+
+<!-- MAPPA -->
+<div id="panel-mappa" class="panel">
+  <div class="card" style="padding:10px 12px 8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="cardLayerToggle()">
+      <div class="section-title" style="margin-bottom:0">🗺 Layer laguna</div>
+      <span id="card-layer-chevron" style="font-size:13px;color:var(--muted)">▼</span>
+    </div>
+    <div id="card-layer-body" style="margin-top:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div id="tog-canali" onclick="toggleWMS('canali')" style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:#fafcff;color:var(--muted);touch-action:manipulation;user-select:none">🔵 Canali</div>
+      <div id="tog-batimetria" onclick="toggleWMS('batimetria')" style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:#fafcff;color:var(--muted);touch-action:manipulation;user-select:none">📊 Batimetria</div>
+    </div>
+    </div>
+  </div>
+  <div class="card" style="padding:10px 12px 8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="cardTracciatiToggle()">
+      <div class="section-title" style="margin-bottom:0">🛰 Tracciati GPS</div>
+      <span id="card-tracciati-chevron" style="font-size:13px;color:var(--muted)">▼</span>
+    </div>
+    <div id="card-tracciati-body" style="margin-top:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div id="tog-tracciati" onclick="trkMapToggle()" style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:var(--navy,#1e3a5f);color:#fff;touch-action:manipulation;user-select:none">🛰 Tracciati</div>
+      <div id="tog-catture" onclick="catMapToggle()" style="padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:#dc2626;color:#fff;touch-action:manipulation;user-select:none">🪝 Catture GPS</div>
+      <div style="font-size:11px;color:var(--muted)" id="trk-map-info">Solo ultimo tracciato visibile</div>
+    </div>
+    </div>
+  </div>
+  <div class="card" style="padding:10px 12px 8px" id="trk-filtri-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="trkFiltriToggle()">
+      <div class="section-title" style="margin-bottom:0">🔍 Filtri tracciati</div>
+      <span id="trk-filtri-chevron" style="font-size:13px;color:var(--muted)">▼</span>
+    </div>
+    <div id="trk-filtri-body" style="display:none;margin-top:10px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
+        <div>
+          <label style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Periodo</label>
+          <div class="sel-wrap"><select id="trk-f-periodo" onchange="trkMapFiltri()" style="width:100%;padding:7px 24px 7px 8px;font-size:12px">
+            <option value="ultimo">Solo ultimo</option>
+            <option value="7">Ultimi 7 giorni</option>
+            <option value="30">Ultimi 30 giorni</option>
+            <option value="stagione">Stagione corrente</option>
+            <option value="tutti">Tutti</option>
+          </select></div>
+        </div>
+        <div>
+          <label style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Zona</label>
+          <div class="sel-wrap"><select id="trk-f-zona" onchange="trkMapFiltri()" style="width:100%;padding:7px 24px 7px 8px;font-size:12px">
+            <option value="">Tutte le zone</option>
+            <option>Laguna Nord</option><option>Laguna Centro</option><option>Laguna Sud</option>
+            <option>Canale dei Petroli</option><option>Canale di Malamocco</option>
+            <option>Canale Melison</option><option>Canale Fisolo</option><option>Canale Spignon</option>
+            <option>San Leonardo</option><option>Porto Marghera</option>
+            <option>Punta Sabbioni</option><option>Chioggia</option>
+            <option>Bocca di Lido</option><option>Bocca di Malamocco</option>
+          </select></div>
+        </div>
+        <div>
+          <label style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Voto min.</label>
+          <div class="sel-wrap"><select id="trk-f-voto" onchange="trkMapFiltri()" style="width:100%;padding:7px 24px 7px 8px;font-size:12px">
+            <option value="0">Tutti</option>
+            <option value="1">★ e oltre</option>
+            <option value="2">★★ e oltre</option>
+            <option value="3">★★★</option>
+          </select></div>
+        </div>
+        <div>
+          <label style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Catture</label>
+          <div class="sel-wrap"><select id="trk-f-catture" onchange="trkMapFiltri()" style="width:100%;padding:7px 24px 7px 8px;font-size:12px">
+            <option value="">Tutti</option>
+            <option value="con">Solo con catture</option>
+            <option value="senza">Solo cappotti</option>
+          </select></div>
+        </div>
+      </div>
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <span id="trk-f-count" style="font-size:11px;color:var(--muted)"></span>
+        <div class="btn btn-sm" onclick="trkMapFiltriReset()" style="font-size:11px">↺ Reset</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="card-mappa-wrap" style="padding:0"><div id="map"></div></div>
+  <div id="spot-list-container" class="card">
+    <div class="section-title">I tuoi spot salvati</div>
+    <div id="spot-list-mappa"><div class="empty">Apri la mappa per vedere gli spot.</div></div>
+    <div style="margin-top:10px;font-size:13px;color:var(--muted)">Clicca sulla mappa per aggiungere un nuovo spot.</div>
+  </div>
+</div>
+
+<!-- STATISTICHE -->
+<div id="panel-statistiche" class="panel">
+  <div id="stats-content"></div>
+</div>
+
+<div id="panel-previsione" class="panel">
+  <div style="padding:16px 4px">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px">🔮 Previsione KNN</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px">Inserisci le condizioni previste — il motore trova le uscite più simili nel tuo storico e stima le catture attese.</div>
+    <div style="background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Condizioni previste</div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Fase marea</label>
+      <div class="sel-wrap" style="margin-bottom:10px"><select id="knn-marea" style="width:100%;padding:8px 10px;background:var(--input);color:var(--text);border:0.5px solid var(--border);border-radius:8px;font-size:13px"><option value="">— seleziona —</option><option value="inizio_crescente">Inizio crescente</option><option value="crescente">Crescente</option><option value="fine_crescente">Fine crescente</option><option value="inizio_calante">Inizio calante</option><option value="calante">Calante</option><option value="fine_calante">Fine calante</option></select></div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Fase lunare</label>
+      <div class="sel-wrap" style="margin-bottom:10px"><select id="knn-luna" style="width:100%;padding:8px 10px;background:var(--input);color:var(--text);border:0.5px solid var(--border);border-radius:8px;font-size:13px"><option value="">— seleziona —</option><option value="nuova">Luna nuova</option><option value="crescente">Luna crescente</option><option value="piena">Luna piena</option><option value="calante">Luna calante</option></select></div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Temperatura acqua</label>
+      <div class="sel-wrap" style="margin-bottom:10px"><select id="knn-temp" style="width:100%;padding:8px 10px;background:var(--input);color:var(--text);border:0.5px solid var(--border);border-radius:8px;font-size:13px"><option value="">— seleziona —</option><option value="10">10°C</option><option value="12">12°C</option><option value="14">14°C</option><option value="16">16°C</option><option value="18">18°C</option><option value="20">20°C</option><option value="22">22°C</option><option value="24">24°C</option><option value="26">26°C</option><option value="28">28°C</option></select></div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Vento (km/h)</label>
+      <div class="sel-wrap" style="margin-bottom:10px"><select id="knn-vento" style="width:100%;padding:8px 10px;background:var(--input);color:var(--text);border:0.5px solid var(--border);border-radius:8px;font-size:13px"><option value="">— seleziona —</option><option value="0">Assente (0)</option><option value="5">Leggero (5)</option><option value="10">Moderato (10)</option><option value="15">Teso (15)</option><option value="20">Forte (20)</option></select></div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Cielo</label>
+      <div class="sel-wrap" style="margin-bottom:10px"><select id="knn-cielo" style="width:100%;padding:8px 10px;background:var(--input);color:var(--text);border:0.5px solid var(--border);border-radius:8px;font-size:13px"><option value="">— seleziona —</option><option value="Sereno">Sereno</option><option value="Parz. nuvoloso">Parz. nuvoloso</option><option value="Nuvoloso">Nuvoloso</option></select></div>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Mese</label>
+      <div class="sel-wrap" style="margin-bottom:14px"><select id="knn-mese" style="width:100%;padding:8px 10px;background:var(--input);color:var(--text);border:0.5px solid var(--border);border-radius:8px;font-size:13px"><option value="">— seleziona —</option><option value="1">Gennaio</option><option value="2">Febbraio</option><option value="3">Marzo</option><option value="4">Aprile</option><option value="5">Maggio</option><option value="6">Giugno</option><option value="7">Luglio</option><option value="8">Agosto</option><option value="9">Settembre</option><option value="10">Ottobre</option><option value="11">Novembre</option><option value="12">Dicembre</option></select></div>
+      <button class="btn" style="width:100%;padding:11px;font-size:14px;font-weight:600" onclick="calcolaKNN()">📊 Calcola previsione</button>
+    </div>
+    <div id="knn-risultato"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6;padding:10px;background:var(--card);border-radius:8px;border:0.5px solid var(--border)">⚠️ La previsione si basa sulle tue uscite passate (K=3 più simili). Migliora con ogni nuova uscita registrata. Non considera fattori non inseriti (correnti, baitfish, pressione di pesca).</div>
+  </div>
+</div>
+</div>
+
+
+<script>
+var uscite=[],spots=[],cattureCorrenti=[],ventoDirCorr='',mareaCorr='',lunaCorr='',votoCorr=3;
+var mapInstance=null,spotMarkers=[],newSpotMarker=null;
+// Costanti nomi condivise (usate in Storico, Stats e popup Mappa tracciato)
+var mareaNomi={'inizio_crescente':'↗ Inizio crescente','crescente':'↑ Crescente','fine_crescente':'↑ Fine crescente','inizio_calante':'↘ Inizio calante','calante':'↓ Calante','fine_calante':'↓ Fine calante'};
+var lunaNomi={'nuova':'🌑 Nuova','crescente':'🌒 Crescente','piena':'🌕 Piena','calante':'🌘 Calante'};
+var wmsLayers={canali:null,batimetria:null};
+var wmsActive={canali:false,batimetria:false};
+var WMS_URL='https://cigno.atlantedellalaguna.it/geoserver/wms';
+var wmsConfig={
+  canali:{layers:'base:canali_lagunari,base:toponimi_canali',opacity:1.0},
+  batimetria:{layers:'atlante2006:ProfonditaLaguna2000',opacity:0.9}
+};
+function toggleWMS(key){
+  if(!mapInstance)return;
+  var tog=document.getElementById('tog-'+key);
+  if(wmsActive[key]){
+    if(wmsLayers[key]){mapInstance.removeLayer(wmsLayers[key]);wmsLayers[key]=null;}
+    wmsActive[key]=false;
+    tog.style.background='#fafcff';tog.style.color='';tog.style.borderColor='';
+  } else {
+    wmsLayers[key]=L.tileLayer.wms(WMS_URL,{
+      layers:wmsConfig[key].layers,
+      format:'image/png',
+      transparent:true,
+      opacity:wmsConfig[key].opacity,
+      attribution:'© Atlante della Laguna - Comune di Venezia / CNR-ISMAR',
+      tileSize:512
+    }).addTo(mapInstance);
+    wmsActive[key]=true;
+    tog.style.background='var(--blu2)';tog.style.color='#fff';tog.style.borderColor='var(--blu2)';
+  }
+}
+
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+  document.querySelector('.header').style.display = (id==='mappa') ? 'none' : '';
+  if(id==='mappa'){document.body.classList.add('mappa-active');setTimeout(initMap,100);setTimeout(mappaCardsInit,50);}
+  else{document.body.classList.remove('mappa-active');}
+  if(id==='nuova'){populateSpotDropdown();rilevafaseLunare(true);}
+  if(id==='storico'){renderStorico();trkRipristinaStatoSezione();}
+  if(id==='statistiche')renderStats();
+  if(id==='previsione')initKNN();
+}
+function initStorage(){
+  try{var r=localStorage.getItem('pesca_uscite');if(r)uscite=JSON.parse(r);}catch(e){uscite=[];}
+  try{var r2=localStorage.getItem('pesca_spots');if(r2)spots=JSON.parse(r2);}catch(e){spots=[];}
+  try{var r3=localStorage.getItem('pesca_pescatore');if(r3)document.getElementById('nome-pescatore').value=r3;}catch(e){}
+}
+function saveUscite(){try{localStorage.setItem('pesca_uscite',JSON.stringify(uscite));}catch(e){alert('⚠️ Spazio browser pieno — non è stato possibile salvare.\nEsporta i dati in JSON e svuota alcune uscite vecchie.');}}
+
+
+// ── KNN PREVISIONE ─────────────────────────────────────────────────────────────
+var KNN_K = 3;
+
+// Pesi calibrati sui dati reali 2025
+var KNN_PESI = {marea:0.30, temp:0.25, luna:0.15, mese:0.10, vento:0.10, cielo:0.10};
+
+// Ordine ciclico fase marea (distanza circolare su 6 posizioni)
+var MAREA_ORD = {inizio_crescente:0, crescente:1, fine_crescente:2, inizio_calante:3, calante:4, fine_calante:5};
+// Ordine ciclico luna (4 posizioni)
+var LUNA_ORD  = {nuova:0, crescente:1, piena:2, calante:3};
+
+function distCircolare(a, b, n) {
+  var d = Math.abs(a - b);
+  return Math.min(d, n - d) / (n / 2); // normalizzato 0-1
+}
+
+function distTemp(t1, t2) {
+  // Distanza dalla finestra ottimale 18-24°C — penalizza deviazioni
+  var centro = 21;
+  var d = Math.abs(t1 - t2) / 18; // range massimo atteso ~18°C
+  return Math.min(d, 1);
+}
+
+function distVento(v1, v2) {
+  return Math.abs(v1 - v2) / 20; // range 0-20
+}
+
+function distCielo(c1, c2) {
+  return c1 === c2 ? 0 : 1;
+}
+
+function distMese(m1, m2) {
+  return distCircolare(m1 - 1, m2 - 1, 12);
+}
+
+function calcolaDistanza(u, input) {
+  var score = 0, pesoTot = 0;
+
+  // Marea
+  if (u.meteo && u.meteo.marea && input.marea) {
+    var a = MAREA_ORD[u.meteo.marea], b = MAREA_ORD[input.marea];
+    if (a !== undefined && b !== undefined) {
+      score += KNN_PESI.marea * distCircolare(a, b, 6);
+      pesoTot += KNN_PESI.marea;
+    }
+  }
+  // Luna
+  if (u.meteo && u.meteo.luna && input.luna) {
+    var a = LUNA_ORD[u.meteo.luna], b = LUNA_ORD[input.luna];
+    if (a !== undefined && b !== undefined) {
+      score += KNN_PESI.luna * distCircolare(a, b, 4);
+      pesoTot += KNN_PESI.luna;
+    }
+  }
+  // Temperatura acqua
+  if (u.meteo && u.meteo.temp_acqua && input.temp) {
+    var t1 = parseFloat(u.meteo.temp_acqua), t2 = parseFloat(input.temp);
+    if (!isNaN(t1) && !isNaN(t2)) {
+      score += KNN_PESI.temp * distTemp(t1, t2);
+      pesoTot += KNN_PESI.temp;
+    }
+  }
+  // Vento
+  if (u.meteo && u.meteo.vento_vel !== undefined && input.vento !== '') {
+    var v1 = parseFloat(u.meteo.vento_vel), v2 = parseFloat(input.vento);
+    if (!isNaN(v1) && !isNaN(v2)) {
+      score += KNN_PESI.vento * distVento(v1, v2);
+      pesoTot += KNN_PESI.vento;
+    }
+  }
+  // Cielo
+  if (u.meteo && u.meteo.cielo && input.cielo) {
+    score += KNN_PESI.cielo * distCielo(u.meteo.cielo, input.cielo);
+    pesoTot += KNN_PESI.cielo;
+  }
+  // Mese
+  if (u.data && input.mese) {
+    var mU = parseInt(u.data.split('-')[1]);
+    var mI = parseInt(input.mese);
+    if (!isNaN(mU) && !isNaN(mI)) {
+      score += KNN_PESI.mese * distMese(mU, mI);
+      pesoTot += KNN_PESI.mese;
+    }
+  }
+
+  // Distanza normalizzata sui pesi effettivamente usati
+  return pesoTot > 0 ? score / pesoTot : 1;
+}
+
+function initKNN() {
+  // Pre-seleziona mese corrente
+  var mese = new Date().getMonth() + 1;
+  var sel = document.getElementById('knn-mese');
+  if (sel && !sel.value) sel.value = String(mese);
+}
+
+function calcolaKNN() {
+  var input = {
+    marea: document.getElementById('knn-marea').value,
+    luna:  document.getElementById('knn-luna').value,
+    temp:  document.getElementById('knn-temp').value,
+    vento: document.getElementById('knn-vento').value,
+    cielo: document.getElementById('knn-cielo').value,
+    mese:  document.getElementById('knn-mese').value
+  };
+
+  var div = document.getElementById('knn-risultato');
+
+  if (!input.marea || !input.luna || !input.temp) {
+    div.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px;text-align:center">Seleziona almeno marea, luna e temperatura acqua.</div>';
+    return;
+  }
+
+  if (uscite.length < 3) {
+    div.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px;text-align:center">Servono almeno 3 uscite registrate per calcolare la previsione.</div>';
+    return;
+  }
+
+  // Calcola distanza per ogni uscita
+  var conDist = uscite.map(function(u) {
+    return { u: u, dist: calcolaDistanza(u, input) };
+  });
+  conDist.sort(function(a, b) { return a.dist - b.dist; });
+  var vicini = conDist.slice(0, KNN_K);
+
+  // Media pesata inversamente alla distanza
+  var sommaPesata = 0, sommaPesi = 0;
+  vicini.forEach(function(v) {
+    var peso = 1 / (v.dist + 0.01);
+    sommaPesata += (v.u.catture ? v.u.catture.length : 0) * peso;
+    sommaPesi += peso;
+  });
+  var previsione = sommaPesi > 0 ? sommaPesata / sommaPesi : 0;
+
+  // Etichetta qualitativa
+  var label, colore;
+  if (previsione >= 4)      { label = '🔥 Giornata ottima';        colore = '#4ade80'; }
+  else if (previsione >= 2) { label = '👍 Condizioni favorevoli';  colore = '#facc15'; }
+  else if (previsione >= 1) { label = '🌥️ Qualche cattura possibile'; colore = '#94a3b8'; }
+  else                      { label = '💤 Giornata difficile';      colore = '#f87171'; }
+
+  var nomesMarea = {inizio_crescente:'↗ Inizio cresc.',crescente:'↑ Crescente',fine_crescente:'↑ Fine cresc.',inizio_calante:'↘ Inizio cal.',calante:'↓ Calante',fine_calante:'↓ Fine cal.'};
+  var nomeLuna  = {nuova:'🌑 Nuova',crescente:'🌒 Crescente',piena:'🌕 Piena',calante:'🌘 Calante'};
+
+  var html = '<div style="background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">';
+  html += '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">Stima catture</div>';
+  html += '<div style="font-size:32px;font-weight:700;color:' + colore + ';margin-bottom:4px">' + previsione.toFixed(1) + ' <span style="font-size:16px">spigole</span></div>';
+  html += '<div style="font-size:14px;color:' + colore + ';font-weight:600;margin-bottom:14px">' + label + '</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">Basata su ' + KNN_K + ' uscite più simili · ' + uscite.length + ' uscite totali nel diario</div>';
+  html += '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Uscite analoghe trovate:</div>';
+
+  vicini.forEach(function(v, i) {
+    var u = v.u;
+    var somiglianza = Math.max(0, Math.round((1 - v.dist) * 100));
+    var catN = u.catture ? u.catture.length : 0;
+    var dataFmt = u.data || '—';
+    html += '<div style="border-left:3px solid var(--blu);padding:8px 10px;margin-bottom:8px;background:var(--bg);border-radius:0 6px 6px 0">';
+    html += '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px">#' + (i+1) + ' · ' + dataFmt + ' <span style="color:var(--muted);font-weight:400">· somiglianza ' + somiglianza + '%</span></div>';
+    html += '<div style="font-size:12px;color:var(--muted)">';
+    html += '🐟 ' + catN + ' catture';
+    if (u.meteo) {
+      if (u.meteo.marea) html += ' · ' + (nomesMarea[u.meteo.marea] || u.meteo.marea);
+      if (u.meteo.temp_acqua) html += ' · ' + u.meteo.temp_acqua + 'C';
+      if (u.meteo.luna) html += ' · ' + (nomeLuna[u.meteo.luna] || u.meteo.luna);
+    }
+    html += '</div>';
+    if (u.note) html += '<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">' + u.note + '</div>';
+    html += '</div>';
+  });
+
+  html += '</div>';
+  div.innerHTML = html;
+}
+// ── FINE KNN ────────────────────────────────────────────────────────────────────
+
+function saveSpots(){try{localStorage.setItem('pesca_spots',JSON.stringify(spots));}catch(e){alert('⚠️ Spazio browser pieno — spot non salvato.\nEsporta i dati in JSON e svuota alcune uscite vecchie.');}}
+function salvaPescatore(){try{localStorage.setItem('pesca_pescatore',document.getElementById('nome-pescatore').value);}catch(e){}}
+
+function populateSpotDropdown(){
+  var sel=document.getElementById('spot');
+  if(!sel)return;
+  var current=sel.value;
+  sel.innerHTML='<option value="">Seleziona spot...</option>';
+  var msg=document.getElementById('spot-empty-msg');
+  if(!spots.length){
+    if(msg)msg.style.display='block';
+  } else {
+    if(msg)msg.style.display='none';
+    spots.forEach(function(s){
+      var opt=document.createElement('option');
+      opt.value=s.nome;
+      opt.dataset.lat=s.lat;
+      opt.dataset.lon=s.lon;
+      opt.textContent=s.nome;
+      if(s.nome===current)opt.selected=true;
+      sel.appendChild(opt);
+    });
+  }
+  populateCSpotDropdown();
+}
+function populateCSpotDropdown(){
+  var sel=document.getElementById('c_spot_cattura');
+  if(!sel)return;
+  var current=sel.value;
+  sel.innerHTML='<option value="">— spot uscita —</option>';
+  spots.forEach(function(s){
+    var opt=document.createElement('option');
+    opt.value=s.nome;
+    opt.textContent=s.nome;
+    if(s.nome===current)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function onSpotChange(sel){
+  var opt=sel.options[sel.selectedIndex];
+  document.getElementById('lat').value=opt.dataset.lat||'';
+  document.getElementById('lon').value=opt.dataset.lon||'';
+}
+function toggleMeteo(){
+  var body=document.getElementById('meteo-body');
+  var chev=document.getElementById('meteo-chevron');
+  var aperto=body.style.display!=='none';
+  body.style.display=aperto?'none':'block';
+  chev.textContent=aperto?'▼':'▲';
+}
+function aggiornaMeteoBadge(){
+  var badge=document.getElementById('meteo-badge');
+  if(!badge)return;
+  var campi=['temp','vento_vel','cielo','marea'];
+  var cieloVal=g('cielo');
+  var compilato=g('temp')||g('vento_vel')||(cieloVal&&cieloVal!=='Sereno')||mareaCorr;
+  badge.style.display=compilato?'inline-block':'none';
+}
+function selDir(el,dir){document.querySelectorAll('.dir-btn').forEach(function(b){b.classList.remove('selected');});el.classList.add('selected');ventoDirCorr=dir;aggiornaMeteoBadge();}
+function rilevaPosizione(){
+  var status=document.getElementById('gps-status');
+  status.textContent='⏳ Rilevamento in corso...';
+  gpsGetCurrentPosition(
+    function(pos){
+      var lat=pos.coords.latitude.toFixed(5);
+      var lon=pos.coords.longitude.toFixed(5);
+      document.getElementById('c_lat').value=lat;
+      document.getElementById('c_lon').value=lon;
+      status.textContent='✅ Posizione rilevata con precisione di ±'+Math.round(pos.coords.accuracy||0)+'m';
+      mostraFormSalvaSpotGPS(lat,lon);
+    },
+    function(err){
+      var msg={'1':'Permesso GPS negato. Abilitalo nelle impostazioni.','2':'Segnale GPS non disponibile.','3':'Timeout: riprova all\'aperto.'};
+      status.textContent='⚠️ '+(msg[err.code]||'Errore GPS.');
+    },
+    {enableHighAccuracy:true,timeout:10000,maximumAge:0}
+  );
+}
+function mostraFormSalvaSpotGPS(lat,lon){
+  var existing=document.getElementById('gps-save-spot-form');
+  if(existing)existing.remove();
+  var data=document.getElementById('data').value||new Date().toISOString().split('T')[0];
+  var form=document.createElement('div');
+  form.id='gps-save-spot-form';
+  form.style.cssText='margin-top:10px;padding:10px 12px;background:#f0f6ff;border:1px solid #c8ddf5;border-radius:10px;font-size:13px;width:100%;box-sizing:border-box;overflow:hidden';
+  form.innerHTML=
+    '<div style="font-size:11px;font-weight:600;color:var(--azzurro);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">📍 Dai un nome a questo spot?</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;min-width:0;width:100%;box-sizing:border-box">'+
+    '<input id="gps-spot-nome" type="text" placeholder="Nome dello spot (opzionale)..." style="flex:1;min-width:0;width:0;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-size:16px;background:#fff;box-sizing:border-box"/>'+
+    '<div class="btn btn-sm" onclick="document.getElementById(\'gps-save-spot-form\').remove()">✕</div>'+
+    '</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-top:5px;word-break:break-all">📅 '+fmtData(data)+' · '+lat+', '+lon+' — verrà salvato con la cattura</div>';
+  var wrapper=document.getElementById('gps-spot-wrapper');wrapper.innerHTML='';wrapper.appendChild(form);
+}
+function salvaSpotDaPopupSePresente(){
+  var form=document.getElementById('gps-save-spot-form');
+  if(!form)return;
+  var nomeInput=document.getElementById('gps-spot-nome');
+  var lat=document.getElementById('c_lat').value;
+  var lon=document.getElementById('c_lon').value;
+  var data=document.getElementById('data').value||new Date().toISOString().split('T')[0];
+  if(!lat||!lon){form.remove();return;}
+  var nome=(nomeInput?nomeInput.value.trim():'')||('Spot '+fmtData(data));
+  spots.push({nome:nome,lat:lat,lon:lon,data:data,origine:'gps',id:Date.now()});
+  saveSpots();
+  populateSpotDropdown();
+  if(mapInstance)renderSpotMappa();
+  form.remove();
+}
+function salvaSpotDaGPS(lat,lon,data){
+  var nomeInput=document.getElementById('gps-spot-nome');
+  var nome=(nomeInput?nomeInput.value.trim():'')||('Spot '+fmtData(data));
+  spots.push({nome:nome,lat:lat,lon:lon,data:data,origine:'gps',id:Date.now()});
+  saveSpots();
+  populateSpotDropdown();
+  if(mapInstance)renderSpotMappa();
+  var form=document.getElementById('gps-save-spot-form');
+  if(form){form.innerHTML='<div style="color:#2d7a4a;font-size:13px">✅ Spot "<b>'+nome+'</b>" salvato.</div>';}
+  setTimeout(function(){var f=document.getElementById('gps-save-spot-form');if(f)f.remove();},2500);
+}
+function rilevafaseLunare(silenzioso){
+  var dataVal=document.getElementById('data').value;
+  var d=dataVal?new Date(dataVal+'T12:00:00'):new Date();
+  var known=new Date('2000-01-06T18:14:00Z');
+  var synodic=29.530588853;
+  var diff=(d-known)/(1000*60*60*24);
+  var age=((diff%synodic)+synodic)%synodic;
+  var tipo,emoji,label;
+  if(age<1.85||age>=27.65){tipo='nuova';emoji='🌑';label='Nuova';}
+  else if(age<12.92){tipo='crescente';emoji='🌒';label='Crescente';}
+  else if(age<16.61){tipo='piena';emoji='🌕';label='Piena';}
+  else{tipo='calante';emoji='🌘';label='Calante';}
+  // giorni alla prossima piena e nuova
+  var giorniPiena=Math.round(((14.765-age)+synodic)%synodic);
+  var giorniNuova=Math.round(((synodic-age)+synodic)%synodic);
+  if(giorniPiena===0)giorniPiena=Math.round(synodic);
+  if(giorniNuova===0)giorniNuova=Math.round(synodic);
+  var prossimaLabel, prossimiGiorni;
+  if(giorniPiena<=giorniNuova){prossimaLabel='Luna piena';prossimiGiorni=giorniPiena;}
+  else{prossimaLabel='Luna nuova';prossimiGiorni=giorniNuova;}
+  document.querySelectorAll('.tog-luna').forEach(function(b){b.classList.remove('selected');});
+  var togEl=document.getElementById('tog-luna-'+tipo);
+  if(togEl)togEl.classList.add('selected');
+  lunaCorr=tipo;
+  aggiornaMeteoBadge();
+  var msg=document.getElementById('luna-auto-msg');
+  if(msg){
+    msg.innerHTML=emoji+' <b>'+label+'</b><br><span style="color:var(--muted)">'+prossimaLabel+' tra '+prossimiGiorni+' giorni</span>';
+  }
+}
+function selLuna(el,tipo){document.querySelectorAll('#panel-nuova .tog').forEach(function(b){if(b.onclick&&b.onclick.toString().includes('selLuna'))b.classList.remove('selected');});el.classList.add('selected');lunaCorr=tipo;aggiornaMeteoBadge();}
+function selMarea(el,tipo){document.querySelectorAll('#panel-nuova .tog[onclick*="selMarea"]').forEach(function(b){b.classList.remove('selected');});el.classList.add('selected');mareaCorr=tipo;aggiornaMeteoBadge();}
+function togColore(el,_){el.classList.toggle('selected');var sel=Array.from(document.querySelectorAll('#esca_colore_wrap .tog.selected')).map(function(s){return s.textContent;});document.getElementById('esca_colore').value=sel.join(', ');}
+function togColoreCattura(el,_){el.classList.toggle('selected');var sel=Array.from(document.querySelectorAll('#c_esca_colore_wrap .tog.selected')).map(function(s){return s.textContent;});document.getElementById('c_esca_colore').value=sel.join(', ');}
+function selVoto(el,v){document.querySelectorAll('.voto-opt').forEach(function(b){b.classList.remove('sel');});el.classList.add('sel');votoCorr=v;document.getElementById('voto').value=v;}
+
+function aggiungiCattura(){
+  if(!g('c_specie')){alert('Seleziona la specie prima di salvare la cattura.');return;}
+  salvaSpotDaPopupSePresente();
+  var c={specie:g('c_specie'),peso:g('c_peso'),lunghezza:g('c_lunghezza'),esca:g('c_esca'),esca_marca:g('c_esca_marca'),esca_taglia:g('c_esca_taglia'),esca_colore:g('c_esca_colore'),esito:g('c_esito'),note:g('c_note'),lat:g('c_lat'),lon:g('c_lon'),spot_cattura:g('c_spot_cattura')};
+  cattureCorrenti.push(c);
+  renderCattureCorrenti();
+  // reset campi cattura
+  ['c_peso','c_lunghezza','c_note','c_lat','c_lon','c_esca_colore','c_esca_marca'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('c_specie').selectedIndex=0;
+  document.getElementById('c_esito').selectedIndex=0;
+  document.getElementById('c_esca').selectedIndex=0;
+  document.getElementById('c_esca_taglia').selectedIndex=0;
+  var csc=document.getElementById('c_spot_cattura');if(csc)csc.selectedIndex=0;
+  document.querySelectorAll('#c_esca_colore_wrap .tog').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('gps-status').textContent='';
+  var gpsForm=document.getElementById('gps-save-spot-form');if(gpsForm)gpsForm.remove();
+  // feedback visivo
+  var msg=document.getElementById('cattura-saved-msg');
+  if(msg){msg.style.display='block';setTimeout(function(){msg.style.display='none';},2500);}
+  aggiornaBtnRipeti();
+}
+function renderCattureCorrenti(){
+  var el=document.getElementById('catture-lista');
+  if(!cattureCorrenti.length){el.innerHTML='<p style="font-size:13px;color:var(--muted);padding:8px 0">Nessuna cattura ancora.</p>';return;}
+  el.innerHTML=cattureCorrenti.map(function(c,i){
+    var cr=c.esito&&c.esito.includes('C&R');
+    return '<div class="catch-row"><span style="font-size:18px">🐟</span><span style="flex:1;font-size:14px"><b>'+c.specie+'</b>'+(c.peso?' <span class="badge">'+c.peso+'</span>':'')+(c.lunghezza?' <span class="badge">'+c.lunghezza+'</span>':'')+(c.esca?' <span class="badge badge-specie">'+c.esca+'</span>':'')+'</span><span class="badge '+(cr?'badge-cr':'badge-casa')+'">'+(cr?'C&R':'Trattenuta')+'</span><div class="btn btn-sm btn-danger" style="margin-left:8px" onclick="rimuoviCattura('+i+')">✕</div></div>';
+  }).join('');
+}
+function rimuoviCattura(i){cattureCorrenti.splice(i,1);renderCattureCorrenti();aggiornaBtnRipeti();}
+function aggiornaBtnRipeti(){var w=document.getElementById('ripeti-btn-wrap');if(w)w.style.display=cattureCorrenti.length?'block':'none';}
+function ripetUltima(){
+  if(!cattureCorrenti.length)return;
+  var u=cattureCorrenti[cattureCorrenti.length-1];
+  var selSpecie=document.getElementById('c_specie');
+  if(selSpecie){for(var i=0;i<selSpecie.options.length;i++){if(selSpecie.options[i].value===u.specie){selSpecie.selectedIndex=i;break;}}}
+  var selEsca=document.getElementById('c_esca');
+  if(selEsca){for(var i=0;i<selEsca.options.length;i++){if(selEsca.options[i].value===u.esca){selEsca.selectedIndex=i;break;}}}
+  var selTaglia=document.getElementById('c_esca_taglia');
+  if(selTaglia){for(var i=0;i<selTaglia.options.length;i++){if(selTaglia.options[i].value===u.esca_taglia){selTaglia.selectedIndex=i;break;}}}
+  var selEsito=document.getElementById('c_esito');
+  if(selEsito){for(var i=0;i<selEsito.options.length;i++){if(selEsito.options[i].value===u.esito){selEsito.selectedIndex=i;break;}}}
+  var selSpot=document.getElementById('c_spot_cattura');
+  if(selSpot){for(var i=0;i<selSpot.options.length;i++){if(selSpot.options[i].value===u.spot_cattura){selSpot.selectedIndex=i;break;}}}
+  var marcaEl=document.getElementById('c_esca_marca');if(marcaEl)marcaEl.value=u.esca_marca||'';
+  var coloreEl=document.getElementById('c_esca_colore');if(coloreEl)coloreEl.value=u.esca_colore||'';
+  var coloriSalvati=(u.esca_colore||'').split(', ');document.querySelectorAll('#c_esca_colore_wrap .tog').forEach(function(b){b.classList.toggle('selected',coloriSalvati.indexOf(b.textContent.trim())>=0);});document.getElementById('c_esca_colore').value=u.esca_colore||'';
+  ['c_peso','c_lunghezza','c_note','c_lat','c_lon'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('gps-status').textContent='';
+  var gpsForm=document.getElementById('gps-save-spot-form');if(gpsForm)gpsForm.remove();
+}
+function g(id){var el=document.getElementById(id);return el?el.value:'';}
+
+function salvaUltimaEChiudi(){
+  salvaSpotDaPopupSePresente();
+  var specie=g('c_specie');
+  if(specie){
+    var c={specie:specie,peso:g('c_peso'),lunghezza:g('c_lunghezza'),esca:g('c_esca'),esca_marca:g('c_esca_marca'),esca_taglia:g('c_esca_taglia'),esca_colore:g('c_esca_colore'),esito:g('c_esito'),note:g('c_note'),lat:g('c_lat'),lon:g('c_lon'),spot_cattura:g('c_spot_cattura')};
+    cattureCorrenti.push(c);
+    renderCattureCorrenti();
+  }
+  if(!cattureCorrenti.length){
+    if(!confirm('Nessuna cattura registrata. Salvare l\'uscita come cappotto (0 catture)?'))return;
+  }
+  salvaUscita();
+}
+function salvaUscita(){
+  var data=g('data');if(!data){alert('Inserisci la data.');return;}
+  var u={id:Date.now(),data:data,ora:g('ora'),zona:g('zona'),spot:g('spot'),lat:g('lat'),lon:g('lon'),
+    pescatore:document.getElementById('nome-pescatore').value,
+    meteo:{temp:g('temp'),vento_vel:g('vento_vel'),vento_dir:ventoDirCorr,visibilita:g('visibilita'),cielo:g('cielo'),mare:g('mare'),marea:mareaCorr,luna:lunaCorr,livello_marea:g('livello_marea'),pressione:g('pressione'),temp_acqua:g('temp_acqua')},
+    tecnica:g('tecnica'),note:g('note'),voto:votoCorr,catture:cattureCorrenti.slice()};
+  uscite.unshift(u);saveUscite();alert('✅ Uscita salvata!');resetForm();setTimeout(function(){window.scrollTo({top:0,behavior:'smooth'});},100);
+}
+function resetForm(){
+  ['note','c_esca','c_note','c_lat','c_lon','c_esca_colore','c_esca_marca','esca_colore'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['zona','spot','temp','vento_vel','temp_acqua','visibilita','cielo','mare','pressione','tecnica','livello_marea','c_specie','c_peso','c_lunghezza','c_esca_taglia','c_esito'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  document.querySelectorAll('#c_esca_colore_wrap .tog').forEach(function(b){b.classList.remove('selected');});
+  var now2=new Date();
+  document.getElementById('data').value=now2.toISOString().split('T')[0];
+  var oraEl=document.getElementById('ora');if(oraEl)oraEl.value=String(now2.getHours()).padStart(2,'0')+':'+String(now2.getMinutes()).padStart(2,'0');
+  document.getElementById('lat').value='';
+  document.getElementById('lon').value='';
+  // scroll in cima
+  window.scrollTo({top:0,behavior:'smooth'});
+  // riapri meteo accordion
+  var meteoBody=document.getElementById('meteo-body');
+  var meteoChev=document.getElementById('meteo-chevron');
+  var meteoBadge=document.getElementById('meteo-badge');
+  if(meteoBody)meteoBody.style.display='block';
+  if(meteoChev)meteoChev.textContent='▲';
+  if(meteoBadge)meteoBadge.style.display='none';
+  // rimuovi form GPS residuo
+  var gpsWrapper=document.getElementById('gps-spot-wrapper');if(gpsWrapper)gpsWrapper.innerHTML='';
+  var gpsForm=document.getElementById('gps-save-spot-form');if(gpsForm)gpsForm.remove();
+  document.getElementById('gps-status').textContent='';
+  populateSpotDropdown();
+  cattureCorrenti=[];ventoDirCorr='';mareaCorr='';lunaCorr='';votoCorr=3;
+  document.querySelectorAll('.dir-btn,.tog').forEach(function(b){b.classList.remove('selected');});
+  document.querySelectorAll('.voto-opt').forEach(function(b,i){b.classList.toggle('sel',i===2);});
+  renderCattureCorrenti();
+  rilevafaseLunare(true);
+}
+function ripetiUltimaUscita(){
+  if(!uscite.length){alert('Nessuna uscita precedente da cui copiare i dati.');return;}
+  var u=uscite[0];
+  // zona
+  var zonaEl=document.getElementById('zona');
+  if(zonaEl&&u.zona)zonaEl.value=u.zona;
+  // spot
+  var spotEl=document.getElementById('spot');
+  if(spotEl&&u.spot){
+    spotEl.value=u.spot;
+    var oe=spotEl.options[spotEl.selectedIndex];
+    if(oe){document.getElementById('lat').value=oe.dataset.lat||u.lat||'';document.getElementById('lon').value=oe.dataset.lon||u.lon||'';}
+  }
+  // meteo campi select/input
+  var m=u.meteo||{};
+  ['temp','vento_vel','visibilita','cielo','mare','livello_marea','pressione','temp_acqua'].forEach(function(id){
+    var el=document.getElementById(id);if(el&&m[id])el.value=m[id];
+  });
+  // vento direzione (dir-btn)
+  if(m.vento_dir){
+    var db=document.querySelector('.dir-btn[onclick*="\''+m.vento_dir+'\'"]');
+    if(db)selDir(db,m.vento_dir);
+  }
+  // marea (tog)
+  if(m.marea){
+    var mb=document.querySelector('#panel-nuova .tog[onclick*="\''+m.marea+'\'"]');
+    if(mb)selMarea(mb,m.marea);
+  }
+  // luna
+  if(m.luna){
+    var lb=document.querySelector('#panel-nuova .tog[onclick*="\''+m.luna+'\'"]');
+    if(lb)selLuna(lb,m.luna);
+  }
+  // tecnica
+  var tecEl=document.getElementById('tecnica');if(tecEl&&u.tecnica)tecEl.value=u.tecnica;
+  // voto
+  if(u.voto){
+    var vb=document.querySelector('.voto-opt[onclick*="selVoto(this,'+u.voto+')"]');
+    if(vb)selVoto(vb,u.voto);
+  }
+  aggiornaMeteoBadge();
+  alert('Dati dell\'ultima uscita copiati. Modifica data, ora e catture prima di salvare.');
+}
+function renderStorico(){
+  var lista=document.getElementById('storico-lista');
+  var txt=(document.getElementById('filtro-testo')||{value:''}).value.toLowerCase();
+  var zona=(document.getElementById('filtro-zona')||{value:''}).value;
+  var specie=(document.getElementById('filtro-specie')||{value:''}).value;
+  var da=(document.getElementById('filtro-da')||{value:''}).value;
+  var a=(document.getElementById('filtro-a')||{value:''}).value;
+  var filtered=uscite.filter(function(u){
+    if(!u.catture)u.catture=[];
+    var hay=[u.spot,u.zona,u.note,u.esca].concat(u.catture.map(function(c){return c.specie+' '+(c.esca||'');})).join(' ').toLowerCase();
+    var okTxt=!txt||hay.includes(txt);
+    var okZona=!zona||u.zona===zona;
+    var okSpecie=!specie||u.catture.some(function(c){return c.specie===specie;});
+    var okDa=!da||u.data>=da;
+    var okA=!a||u.data<=a;
+    return okTxt&&okZona&&okSpecie&&okDa&&okA;
+  });
+  if(!filtered.length){lista.innerHTML='<div class="empty">Nessuna uscita trovata.</div>';return;}
+  var mareaNomi={'inizio_crescente':'↗ Inizio crescente','crescente':'↑ Crescente','fine_crescente':'↑ Fine crescente','inizio_calante':'↘ Inizio calante','calante':'↓ Calante','fine_calante':'↓ Fine calante'};
+  var lunaNomi={'nuova':'🌑 Nuova','crescente':'🌒 Crescente','piena':'🌕 Piena','calante':'🌘 Calante'};
+  lista.innerHTML=filtered.map(function(u){
+    if(!u.catture)u.catture=[];
+    if(!u.meteo)u.meteo={};
+    var stars='★'.repeat(parseInt(u.voto||3));
+    var nCatture=u.catture.length;
+
+    // Tracciato associato?
+    var trkAssociato=typeof tracciati!=='undefined'?tracciati.find(function(x){return x.uscita_id===u.id;}):null;
+    var trkBadgeHtml='';
+    var trkMetricheHtml='';
+    if(trkAssociato){
+      var mTrk=trkMetriche(trkAssociato);
+      var nSpotCat=Array.isArray(trkAssociato.spot_catture)?trkAssociato.spot_catture.length:0;
+      trkBadgeHtml='<span class="badge" style="background:#fff3e8;color:#e07b39">🛰 '+mTrk.km.toFixed(2)+' km</span> ';
+      trkMetricheHtml=
+        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f4f8">'+
+        '<div style="font-size:11px;font-weight:600;color:#e07b39;text-transform:uppercase;margin-bottom:6px">🛰 Tracciato</div>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+          '<span class="badge">📏 '+mTrk.km.toFixed(2)+' km</span>'+
+          '<span class="badge">⏱ '+trkFmtDurata(mTrk.durata_min)+'</span>'+
+          '<span class="badge">🏃 '+trkFmtDurata(mTrk.t_movimento_min)+' in movimento</span>'+
+          '<span class="badge">⏸ '+trkFmtDurata(mTrk.t_fermo_min)+' fermo</span>'+
+          '<span class="badge">📍 '+mTrk.n_soste+' soste</span>'+
+          (nSpotCat>0?'<span class="badge" style="background:#fff3e8;color:#e07b39">🪝 '+nSpotCat+' spot cattura GPS</span>':'')+
+        '</div>'+
+        '</div>';
+    }
+
+    // DETTAGLIO COMPLETO (nascosto di default)
+    var meteoRighe=[
+      u.meteo.temp?'🌡 Temp. aria: '+u.meteo.temp:'',
+      u.meteo.temp_acqua?'💧 Temp. acqua: '+u.meteo.temp_acqua:'',
+      u.meteo.vento_vel?(u.meteo.vento_vel+' km/h'+(u.meteo.vento_dir?' '+u.meteo.vento_dir:'')):'',
+      u.meteo.cielo?'☁️ '+u.meteo.cielo:'',
+      u.meteo.visibilita?'👁 '+u.meteo.visibilita:'',
+      u.meteo.mare?'🌊 Acqua '+u.meteo.mare:'',
+      u.meteo.pressione?'🔵 Pressione: '+u.meteo.pressione:'',
+      u.meteo.marea?(mareaNomi[u.meteo.marea]||u.meteo.marea):'',
+      u.meteo.livello_marea?'Livello: '+u.meteo.livello_marea+' cm':'',
+      u.meteo.luna?(lunaNomi[u.meteo.luna]||u.meteo.luna):''
+    ].filter(Boolean);
+
+    var catchDetail=nCatture?
+      u.catture.map(function(c){
+        var cr=c.esito&&c.esito.includes('C&R');
+        var info=[c.peso,c.lunghezza,c.esca,c.esca_marca,c.esca_taglia,c.esca_colore].filter(Boolean).join(' · ');
+        return '<div class="catch-row" style="padding:5px 0">'+
+          '<span style="font-size:15px">🐟</span>'+
+          '<span style="flex:1;font-size:13px"><b>'+c.specie+'</b>'+(info?' <span style="color:var(--muted)">'+info+'</span>':'')+(c.note?' <span style="font-style:italic;color:var(--muted)">— '+c.note+'</span>':'')+'</span>'+
+          (c.esito?'<span class="badge '+(cr?'badge-cr':'badge-casa')+'">'+(cr?'C&R':'Trattenuta')+'</span>':'<span class="badge badge-casa">Trattenuta</span>')+
+          (c.lat?'<span style="font-size:10px;color:var(--muted);margin-left:6px">📍</span>':'')+'</div>';
+      }).join('')
+      :'<div style="font-size:13px;color:var(--muted);padding:4px 0">Nessuna cattura registrata</div>';
+
+    var dettaglio=
+      '<div id="det-'+u.id+'" style="display:none;margin-top:10px;border-top:1px solid #f0f4f8;padding-top:10px">'+
+      // meteo
+      (meteoRighe.length?
+        '<div style="font-size:11px;font-weight:600;color:var(--azzurro);text-transform:uppercase;margin-bottom:6px">Meteo &amp; Marea</div>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+
+        meteoRighe.map(function(r){return '<span class="badge">'+r+'</span>';}).join('')+
+        '</div>':'')+
+      // tecnica ed esca
+      (u.tecnica||u.esca?
+        '<div style="font-size:11px;font-weight:600;color:var(--azzurro);text-transform:uppercase;margin-bottom:6px">Tecnica &amp; Esca</div>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+
+        [u.tecnica].filter(Boolean).map(function(r){return '<span class="badge">'+r+'</span>';}).join('')+
+        '</div>':'')+
+      // catture
+      '<div style="font-size:11px;font-weight:600;color:var(--azzurro);text-transform:uppercase;margin-bottom:6px">Catture ('+nCatture+')</div>'+
+      catchDetail+
+      // note
+      (u.note?'<div style="margin-top:10px;font-size:13px;color:var(--muted);font-style:italic;border-top:1px solid #f0f4f8;padding-top:8px">📝 '+u.note+'</div>':'')+
+      // tracciato (se associato)
+      trkMetricheHtml+
+      '</div>';
+
+    return '<div class="uscita-card" data-uscita-id="'+u.id+'" style="cursor:pointer" onclick="toggleDetUscita('+u.id+',event)">'+
+      '<div class="uscita-header">'+
+        '<div>'+
+          '<div class="uscita-date">'+fmtData(u.data)+(u.ora?' · '+u.ora:'')+'</div>'+
+          '<div class="uscita-spot">'+[u.zona,u.spot].filter(Boolean).join(' — ')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;align-items:center">'+
+          trkBadgeHtml+
+          '<span class="stars">'+stars+'</span>'+
+          '<span style="font-size:12px;color:var(--muted)">🐟 '+nCatture+'</span>'+
+          '<span id="chev-'+u.id+'" style="font-size:12px;color:var(--muted)">▼</span>'+
+          '<div class="btn btn-sm btn-danger" onclick="eliminaUscita('+u.id+');event.stopPropagation()">Elimina</div>'+
+        '</div>'+
+      '</div>'+
+      dettaglio+
+    '</div>';
+  }).join('');
+}
+function toggleDetUscita(id,ev){
+  if(ev&&ev.target&&ev.target.classList.contains('btn-danger'))return;
+  var det=document.getElementById('det-'+id);
+  var chev=document.getElementById('chev-'+id);
+  if(!det)return;
+  var aperto=det.style.display!=='none';
+  det.style.display=aperto?'none':'block';
+  if(chev)chev.textContent=aperto?'▼':'▲';
+}
+function eliminaUscita(id){if(!confirm('Eliminare questa uscita?'))return;uscite=uscite.filter(function(u){return u.id!==id;});saveUscite();renderStorico();}
+function fmtData(d){if(!d)return '';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+
+var overlayLat=null,overlayLon=null;
+
+
+function ricentraMappa(centro, zoom){
+  document.activeElement.blur();
+  var altezzaIniziale=window.visualViewport?window.visualViewport.height:window.innerHeight;
+
+  function esegui(){
+    var panel=document.getElementById('panel-mappa');
+    if(panel) panel.scrollTop=0;
+    window.scrollTo(0,0);
+    var mapEl=document.getElementById('map');
+    if(mapEl) void mapEl.offsetWidth;
+    mapInstance.invalidateSize({pan:false,animate:false});
+    mapInstance.setView([centro.lat,centro.lng],zoom,{animate:false});
+  }
+
+  if(window.visualViewport){
+    // Aspetta che il viewport torni all'altezza normale (tastiera chiusa)
+    function onResize(){
+      var h=window.visualViewport.height;
+      // quando l'altezza supera il 90% di innerHeight, la tastiera è chiusa
+      if(h > window.innerHeight * 0.85){
+        window.visualViewport.removeEventListener('resize',onResize);
+        clearTimeout(fallback);
+        setTimeout(esegui, 100); // piccolo delay per stabilizzazione
+      }
+    }
+    // Se la tastiera è già chiusa (viewport già pieno), esegui subito
+    if(window.visualViewport.height > window.innerHeight * 0.85){
+      setTimeout(esegui, 100);
+    } else {
+      window.visualViewport.addEventListener('resize', onResize);
+      // fallback: dopo 1.5s esegui comunque
+      var fallback=setTimeout(function(){
+        window.visualViewport.removeEventListener('resize',onResize);
+        esegui();
+      }, 1500);
+    }
+  } else {
+    // Fallback per browser senza visualViewport
+    setTimeout(esegui, 600);
+  }
+}
+
+function initMap(){
+  if(mapInstance){mapInstance.invalidateSize();renderSpotMappa();trkMapRender();return;}
+  mapInstance=L.map('map').setView([45.4408,12.3155],12);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri © OpenStreetMap',maxZoom:19}).addTo(mapInstance);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'',maxZoom:19,opacity:0.45}).addTo(mapInstance);
+  renderSpotMappa();
+  trkMapBoundsFatto=false; // reset così al primo render fa il fit bounds
+  trkMapRender();
+  // aggiorno testo info toggle in base ai dati
+  var info=document.getElementById('trk-map-info');
+  if(info)info.textContent=tracciati.length?'Solo ultimo tracciato visibile':'Nessun tracciato registrato';
+  mapInstance.on('click',function(e){
+    if(newSpotMarker)mapInstance.removeLayer(newSpotMarker);
+    newSpotMarker=L.marker(e.latlng,{draggable:true}).addTo(mapInstance);
+    apriOverlaySpot(e.latlng.lat.toFixed(5),e.latlng.lng.toFixed(5));
+    newSpotMarker.on('dragend',function(ev){
+      var ll=ev.target.getLatLng();
+      apriOverlaySpot(ll.lat.toFixed(5),ll.lng.toFixed(5));
+    });
+  });
+}
+function apriOverlaySpot(lat,lon){
+  overlayLat=lat;overlayLon=lon;
+  var nome=prompt('Nome dello spot:\n📍 '+lat+', '+lon);
+  if(nome===null) return; // utente ha premuto Annulla
+  nome=nome.trim();
+  if(!nome){alert('Inserisci il nome dello spot.');return;}
+  var data=new Date().toISOString().split('T')[0];
+  spots.push({nome:nome,lat:overlayLat,lon:overlayLon,data:data,origine:'manuale',id:Date.now()});
+  saveSpots();
+  if(newSpotMarker){mapInstance.removeLayer(newSpotMarker);newSpotMarker=null;}
+  renderSpotMappa();
+  populateSpotDropdown();
+  setTimeout(function(){
+    var panel=document.getElementById('panel-mappa');
+    if(panel) panel.scrollTop=0;
+    window.scrollTo(0,0);
+  },50);
+}
+function makeSpotIcon(origine){
+  var col=origine==='gps'?'#e07b39':'#2a5298';
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38">'+
+    '<path d="M14 1C7.4 1 2 6.4 2 13c0 9 12 24 12 24S26 22 26 13C26 6.4 20.6 1 14 1z" fill="'+col+'" stroke="#fff" stroke-width="2"/>'+
+    '<circle cx="14" cy="13" r="5" fill="#fff" opacity="0.9"/>'+
+    '</svg>';
+  return L.divIcon({html:svg,className:'',iconSize:[28,38],iconAnchor:[14,38],popupAnchor:[0,-38]});
+}
+function renderSpotMappa(){
+  if(!mapInstance)return;
+  spotMarkers.forEach(function(m){mapInstance.removeLayer(m);});spotMarkers=[];
+  spots.forEach(function(s){
+    var icon=makeSpotIcon(s.origine);
+    var m=L.marker([parseFloat(s.lat),parseFloat(s.lon)],{icon:icon}).addTo(mapInstance);
+    var tipoLabel=s.origine==='gps'?'📍 Da GPS/Rileva':'🗺 Manuale';
+    var dataStr=s.data?('<br><small>📅 '+fmtData(s.data)+'</small>'):'';
+    m.bindPopup('<b>'+s.nome+'</b><br><small style="color:'+(s.origine==='gps'?'#e07b39':'#2a5298')+'">'+tipoLabel+'</small>'+dataStr+'<br><small style="color:#888">'+s.lat+', '+s.lon+'</small>');
+    m.on('click',function(){this.openPopup();});
+    spotMarkers.push(m);
+  });
+  var lista=document.getElementById('spot-list-mappa');
+  if(!spots.length){lista.innerHTML='<div style="font-size:13px;color:var(--muted);padding:8px 0">Nessuno spot salvato. Clicca sulla mappa per aggiungerne uno.</div>';return;}
+  var legenda='<div style="display:flex;gap:12px;margin-bottom:10px;font-size:12px;align-items:center">'+
+    '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#2a5298"></span> Manuale</span>'+
+    '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e07b39"></span> Da GPS/Rileva</span>'+
+    '</div>';
+  lista.innerHTML=legenda+spots.map(function(s,i){
+    var isGps=s.origine==='gps';
+    var badgeStyle='display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:600;margin-left:6px;background:'+(isGps?'#fff3e8':'#eef4fb')+';color:'+(isGps?'#e07b39':'#2a5298');
+    var badge='<span style="'+badgeStyle+'">'+(isGps?'GPS':'Manuale')+'</span>';
+    return '<div class="spot-item" style="cursor:pointer" onclick="zoomSpot('+i+')"><div><span style="font-size:14px;font-weight:500">'+s.nome+badge+'</span><br><span style="font-size:12px;color:var(--muted)">'+(s.data?'📅 '+fmtData(s.data)+' · ':'')+s.lat+', '+s.lon+'</span></div><div class="btn btn-sm btn-danger" onclick="event.stopPropagation();eliminaSpot('+i+')">✕</div></div>';
+  }).join('');
+}
+function salvaSpotPopup(lat,lon){
+  var nome=document.getElementById('popup-nome')?document.getElementById('popup-nome').value.trim():'';
+  if(!nome){alert('Inserisci il nome dello spot.');return;}
+  var centro=mapInstance.getCenter();
+  var zoom=mapInstance.getZoom();
+  var data=new Date().toISOString().split('T')[0];
+  spots.push({nome:nome,lat:lat,lon:lon,data:data,origine:'manuale',id:Date.now()});
+  saveSpots();
+  if(newSpotMarker){mapInstance.removeLayer(newSpotMarker);newSpotMarker=null;}
+  renderSpotMappa();
+  populateSpotDropdown();
+  ricentraMappa(centro, zoom);
+}
+function annullaSpotPopup(){
+  if(newSpotMarker){mapInstance.removeLayer(newSpotMarker);newSpotMarker=null;}
+}
+function eliminaSpot(i){spots.splice(i,1);saveSpots();renderSpotMappa();populateSpotDropdown();}
+function zoomSpot(i){
+  var s=spots[i];
+  if(!s||!mapInstance)return;
+  mapInstance.setView([parseFloat(s.lat),parseFloat(s.lon)],16);
+  if(spotMarkers[i])spotMarkers[i].openPopup();
+}
+
+// ===== TRACCIATI SU MAPPA (4.3.42a — step 1: solo polyline) =====
+var trkMapLayers=[]; // array di polyline Leaflet
+var trkMapVisibile=true; // toggle stato (default: mostrato)
+
+function trkMapGetUltimoId(){
+  if(!tracciati||!tracciati.length)return null;
+  var ord=tracciati.slice().sort(function(a,b){return (b.data_inizio||'').localeCompare(a.data_inizio||'');});
+  return ord[0].id;
+}
+
+// Costruisce popup HTML per un tracciato
+function trkMapBuildPopup(t){
+  var uscAssoc=t.uscita_id?uscite.find(function(u){return u.id===t.uscita_id;}):null;
+  var nCatture=uscAssoc&&uscAssoc.catture?uscAssoc.catture.length:0;
+  var hasCatture=nCatture>0;
+
+  // Header: data + stelle + spot
+  var dataStr=trkFmtData(t.data_inizio);
+  var oraStr=trkFmtOra(t.data_inizio)+'–'+trkFmtOra(t.data_fine);
+  var voto=uscAssoc?parseInt(uscAssoc.voto||0):0;
+  var starsHtml='';
+  if(voto>0){
+    for(var i=0;i<3;i++) starsHtml += i<voto ? '★' : '☆';
+  }
+  var spotStr=uscAssoc?(uscAssoc.spot||uscAssoc.zona||'—'):'Tracciato non associato';
+  var zonaStr=uscAssoc&&uscAssoc.zona?uscAssoc.zona:'';
+
+  // Sezione catture
+  var catturaHtml;
+  if(hasCatture){
+    var listaCat=uscAssoc.catture.map(function(c){
+      var info=[c.peso,c.lunghezza,c.esca].filter(Boolean).join(' · ');
+      return '<div>• <b>'+c.specie+'</b>'+(info?' <span style="color:#991b1b">'+info+'</span>':'')+'</div>';
+    }).join('');
+    catturaHtml='<div class="fd-popup-catture"><b>🐟 '+nCatture+' cattur'+(nCatture===1?'a':'e')+'</b>'+listaCat+'</div>';
+  } else if(uscAssoc){
+    catturaHtml='<div class="fd-popup-catture zero"><b>Cappotto</b> — nessuna cattura registrata</div>';
+  } else {
+    catturaHtml='<div class="fd-popup-catture zero">Tracciato non ancora associato a un\'uscita</div>';
+  }
+
+  // Metriche tracciato
+  var m=trkMetriche(t);
+  var nSpotCat=Array.isArray(t.spot_catture)?t.spot_catture.length:0;
+  var metricsHtml=
+    '<div class="fd-popup-metrics">'+
+      '<div><div class="fd-popup-metric-label">Distanza</div><div class="fd-popup-metric-val">'+m.km.toFixed(2)+' km</div></div>'+
+      '<div><div class="fd-popup-metric-label">Durata</div><div class="fd-popup-metric-val">'+trkFmtDurata(m.durata_min)+'</div></div>'+
+      '<div><div class="fd-popup-metric-label">In movimento</div><div class="fd-popup-metric-val">'+trkFmtDurata(m.t_movimento_min)+'</div></div>'+
+      '<div><div class="fd-popup-metric-label">Fermo</div><div class="fd-popup-metric-val">'+trkFmtDurata(m.t_fermo_min)+' ('+m.n_soste+' soste)</div></div>'+
+      (nSpotCat>0?'<div><div class="fd-popup-metric-label">Spot GPS</div><div class="fd-popup-metric-val" style="color:#e07b39">🪝 '+nSpotCat+'</div></div>':'')+
+    '</div>';
+
+  // Condizioni (da uscita associata)
+  var condHtml='';
+  if(uscAssoc){
+    var ventoStr=uscAssoc.meteo&&uscAssoc.meteo.vento_vel?(uscAssoc.meteo.vento_vel+(uscAssoc.meteo.vento_dir?' '+uscAssoc.meteo.vento_dir:'')):'';
+    var mareaStr=uscAssoc.meteo&&uscAssoc.meteo.marea?(mareaNomi[uscAssoc.meteo.marea]||uscAssoc.meteo.marea):'';
+    var lunaStr=uscAssoc.meteo&&uscAssoc.meteo.luna?(lunaNomi[uscAssoc.meteo.luna]||uscAssoc.meteo.luna):'';
+    var parti=[];
+    if(ventoStr)parti.push('💨 '+ventoStr);
+    if(mareaStr)parti.push('🌊 '+mareaStr);
+    if(lunaStr)parti.push('🌙 '+lunaStr);
+    if(parti.length)condHtml='<div class="fd-popup-conditions">'+parti.join(' · ')+'</div>';
+  }
+
+  // Bottoni azione
+  var actionsHtml=
+    '<div class="fd-popup-actions">'+
+      '<div class="fd-popup-btn primary" onclick="trkMapEsplora('+t.id+')">🎯 Esplora</div>'+
+      (uscAssoc?'<div class="fd-popup-btn" onclick="trkMapApriStorico('+uscAssoc.id+')">📖 Storico</div>':'')+
+    '</div>';
+
+  return '<div class="fd-popup-header">'+
+           '<div class="fd-popup-date">📅 '+dataStr+(starsHtml?'<span class="fd-popup-stars">'+starsHtml+'</span>':'')+'</div>'+
+           '<div class="fd-popup-spot">'+oraStr+' · '+spotStr+(zonaStr&&zonaStr!==spotStr?' — '+zonaStr:'')+'</div>'+
+         '</div>'+
+         '<div class="fd-popup-body">'+
+           catturaHtml+
+           metricsHtml+
+           condHtml+
+           actionsHtml+
+         '</div>';
+}
+
+function trkMapRender(){
+  if(!mapInstance)return;
+  // pulisco polyline esistenti
+  trkMapLayers.forEach(function(l){mapInstance.removeLayer(l);});
+  trkMapLayers=[];
+  catMapLayers.forEach(function(l){mapInstance.removeLayer(l);});
+  catMapLayers=[];
+  if(!tracciati||!tracciati.length){
+    aggiornaInfoTrkMap();
+    return;
+  }
+
+  // Applico filtri
+  var daMostrare=trkMapApplicaFiltri(tracciati);
+
+  daMostrare.forEach(function(t){
+    if(!t.punti||t.punti.length<2)return;
+    var uscAssoc=t.uscita_id?uscite.find(function(u){return u.id===t.uscita_id;}):null;
+    var nCatture=uscAssoc&&uscAssoc.catture?uscAssoc.catture.length:0;
+    var hasCatture=nCatture>0;
+
+    // POLYLINE (solo se toggle tracciati attivo)
+    if(trkMapVisibile){
+      var color=hasCatture?'#dc2626':'#1e40af';
+      var weight=hasCatture?5:3;
+      var opacity=hasCatture?0.9:0.6;
+      var latlngs=t.punti.map(function(p){return [p.lat,p.lon];});
+      var line=L.polyline(latlngs,{color:color,weight:weight,opacity:opacity,smoothFactor:1}).addTo(mapInstance);
+      line.bindPopup(trkMapBuildPopup(t),{maxWidth:300,className:'fd-track-popup'});
+      trkMapLayers.push(line);
+    }
+
+    // PIN CATTURE GPS (solo se toggle catture attivo e se ci sono)
+    if(catMapVisibile&&Array.isArray(t.spot_catture)&&t.spot_catture.length){
+      t.spot_catture.forEach(function(sc){
+        if(!sc.lat||!sc.lon)return;
+        var icon=L.divIcon({
+          className:'fd-catch-pin-wrap',
+          html:'<div class="fd-catch-pin">🐟</div>',
+          iconSize:[28,28],
+          iconAnchor:[14,14]
+        });
+        var marker=L.marker([sc.lat,sc.lon],{icon:icon}).addTo(mapInstance);
+        var oraCat=new Date(sc.t);
+        var oraStr2=String(oraCat.getHours()).padStart(2,'0')+':'+String(oraCat.getMinutes()).padStart(2,'0');
+        var accStr=sc.accuracy?' · precisione ±'+Math.round(sc.accuracy)+'m':'';
+        marker.bindPopup(
+          '<div class="fd-popup-header"><div class="fd-popup-date">🪝 Spot cattura GPS</div>'+
+          '<div class="fd-popup-spot">'+trkFmtData(t.data_inizio)+' · '+oraStr2+'</div></div>'+
+          '<div class="fd-popup-body">'+
+            '<div style="font-size:11px;color:#64748b">📍 '+sc.lat.toFixed(5)+', '+sc.lon.toFixed(5)+accStr+'</div>'+
+          '</div>',
+          {maxWidth:240,className:'fd-track-popup'}
+        );
+        catMapLayers.push(marker);
+      });
+    }
+  });
+
+  // fit bounds sull'ultimo tracciato (solo primo caricamento)
+  if(trkMapLayers.length&&!trkMapBoundsFatto){
+    try{
+      var bounds=L.featureGroup(trkMapLayers).getBounds();
+      mapInstance.fitBounds(bounds,{padding:[30,30]});
+      trkMapBoundsFatto=true;
+    }catch(e){}
+  }
+  aggiornaInfoTrkMap();
+}
+var trkMapBoundsFatto=false;
+var catMapLayers=[];
+var catMapVisibile=true;
+
+function aggiornaInfoTrkMap(){
+  var info=document.getElementById('trk-map-info');
+  if(!info)return;
+  if(!tracciati.length){info.textContent='Nessun tracciato registrato';return;}
+  var nTot=tracciati.length;
+  var nVis=trkMapApplicaFiltri(tracciati).length;
+  var desc=trkMapDescrFiltro();
+  if(trkMapVisibile||catMapVisibile){
+    info.textContent=nVis+'/'+nTot+' tracciati — '+desc;
+  } else {
+    info.textContent='Tutto nascosto';
+  }
+  var cnt=document.getElementById('trk-f-count');
+  if(cnt)cnt.textContent=nVis+' tracciati su '+nTot+' totali';
+}
+
+function trkMapDescrFiltro(){
+  var f=trkMapFiltriState;
+  if(f.periodo==='ultimo')return 'solo ultimo';
+  if(f.periodo==='7')return 'ultimi 7 giorni';
+  if(f.periodo==='30')return 'ultimi 30 giorni';
+  if(f.periodo==='stagione')return 'stagione corrente';
+  if(f.periodo==='tutti')return 'tutti';
+  return '';
+}
+
+// Stato filtri Mappa
+var trkMapFiltriState={periodo:'ultimo',zona:'',voto:0,catture:''};
+
+function trkMapApplicaFiltri(list){
+  var f=trkMapFiltriState;
+  // Periodo
+  var filtrati;
+  if(f.periodo==='ultimo'){
+    var ultimoId=trkMapGetUltimoId();
+    filtrati=list.filter(function(t){return t.id===ultimoId;});
+  } else if(f.periodo==='7'||f.periodo==='30'){
+    var giorni=parseInt(f.periodo);
+    var limite=Date.now()-giorni*86400000;
+    filtrati=list.filter(function(t){
+      var d=t.data_inizio?new Date(t.data_inizio).getTime():0;
+      return d>=limite;
+    });
+  } else if(f.periodo==='stagione'){
+    // ultimi 180 giorni (6 mesi) come proxy di "stagione corrente"
+    var lim180=Date.now()-180*86400000;
+    filtrati=list.filter(function(t){
+      var d=t.data_inizio?new Date(t.data_inizio).getTime():0;
+      return d>=lim180;
+    });
+  } else {
+    filtrati=list.slice();
+  }
+  // Zona / Voto / Catture (richiedono uscita associata)
+  if(f.zona||f.voto>0||f.catture){
+    filtrati=filtrati.filter(function(t){
+      var u=t.uscita_id?uscite.find(function(x){return x.id===t.uscita_id;}):null;
+      if(!u){
+        // tracciati senza uscita associata: se ci sono filtri su attributi uscita, li escludo (tranne se filtro catture='senza', che sarebbe ambiguo → li escludo comunque)
+        return false;
+      }
+      if(f.zona&&u.zona!==f.zona)return false;
+      if(f.voto>0&&(parseInt(u.voto||0))<f.voto)return false;
+      if(f.catture==='con'&&(!u.catture||u.catture.length===0))return false;
+      if(f.catture==='senza'&&(u.catture&&u.catture.length>0))return false;
+      return true;
+    });
+  }
+  return filtrati;
+}
+
+function trkMapFiltri(){
+  var p=document.getElementById('trk-f-periodo');
+  var z=document.getElementById('trk-f-zona');
+  var v=document.getElementById('trk-f-voto');
+  var c=document.getElementById('trk-f-catture');
+  if(p)trkMapFiltriState.periodo=p.value;
+  if(z)trkMapFiltriState.zona=z.value;
+  if(v)trkMapFiltriState.voto=parseInt(v.value||0);
+  if(c)trkMapFiltriState.catture=c.value;
+  trkMapBoundsFatto=false; // ricentro su nuovo risultato
+  trkMapRender();
+}
+
+function trkMapFiltriReset(){
+  trkMapFiltriState={periodo:'ultimo',zona:'',voto:0,catture:''};
+  var p=document.getElementById('trk-f-periodo');if(p)p.value='ultimo';
+  var z=document.getElementById('trk-f-zona');if(z)z.value='';
+  var v=document.getElementById('trk-f-voto');if(v)v.value='0';
+  var c=document.getElementById('trk-f-catture');if(c)c.value='';
+  trkMapBoundsFatto=false;
+  trkMapRender();
+}
+
+function trkFiltriToggle(){
+  var body=document.getElementById('trk-filtri-body');
+  var chev=document.getElementById('trk-filtri-chevron');
+  if(!body)return;
+  var aperto=body.style.display!=='none';
+  body.style.display=aperto?'none':'block';
+  if(chev)chev.textContent=aperto?'▶':'▼';
+  try{localStorage.setItem('mappa_card_filtri_open', aperto?'0':'1');}catch(e){}
+  if(typeof mapInstance!=='undefined'&&mapInstance){setTimeout(function(){mapInstance.invalidateSize({pan:false,animate:false});},250);}
+}
+
+function cardLayerToggle(){
+  var body=document.getElementById('card-layer-body');
+  var chev=document.getElementById('card-layer-chevron');
+  if(!body)return;
+  var aperto=body.style.display!=='none';
+  body.style.display=aperto?'none':'block';
+  if(chev)chev.textContent=aperto?'▶':'▼';
+  try{localStorage.setItem('mappa_card_layer_open', aperto?'0':'1');}catch(e){}
+  if(typeof mapInstance!=='undefined'&&mapInstance){setTimeout(function(){mapInstance.invalidateSize({pan:false,animate:false});},250);}
+}
+
+function cardTracciatiToggle(){
+  var body=document.getElementById('card-tracciati-body');
+  var chev=document.getElementById('card-tracciati-chevron');
+  if(!body)return;
+  var aperto=body.style.display!=='none';
+  body.style.display=aperto?'none':'block';
+  if(chev)chev.textContent=aperto?'▶':'▼';
+  try{localStorage.setItem('mappa_card_tracciati_open', aperto?'0':'1');}catch(e){}
+  if(typeof mapInstance!=='undefined'&&mapInstance){setTimeout(function(){mapInstance.invalidateSize({pan:false,animate:false});},250);}
+}
+
+function mappaCardsInit(){
+  var states=[
+    {body:'card-layer-body',chev:'card-layer-chevron',key:'mappa_card_layer_open',def:'0'},
+    {body:'card-tracciati-body',chev:'card-tracciati-chevron',key:'mappa_card_tracciati_open',def:'0'},
+    {body:'trk-filtri-body',chev:'trk-filtri-chevron',key:'mappa_card_filtri_open',def:'0'}
+  ];
+  states.forEach(function(s){
+    var body=document.getElementById(s.body);
+    var chev=document.getElementById(s.chev);
+    if(!body)return;
+    var v;
+    try{v=localStorage.getItem(s.key);}catch(e){v=null;}
+    if(v===null)v=s.def;
+    var aperta=v==='1';
+    body.style.display=aperta?'block':'none';
+    if(chev)chev.textContent=aperta?'▼':'▶';
+  });
+}
+
+function trkMapToggle(){
+  trkMapVisibile=!trkMapVisibile;
+  var btn=document.getElementById('tog-tracciati');
+  if(btn){
+    if(trkMapVisibile){
+      btn.style.background='#1e3a5f';
+      btn.style.color='#fff';
+    } else {
+      btn.style.background='#fafcff';
+      btn.style.color='var(--muted)';
+    }
+  }
+  trkMapRender();
+}
+
+function catMapToggle(){
+  catMapVisibile=!catMapVisibile;
+  var btn=document.getElementById('tog-catture');
+  if(btn){
+    if(catMapVisibile){
+      btn.style.background='#dc2626';
+      btn.style.color='#fff';
+    } else {
+      btn.style.background='#fafcff';
+      btn.style.color='var(--muted)';
+    }
+  }
+  trkMapRender();
+}
+
+// Azione bottone "Esplora" nel popup: zoom sul tracciato
+function trkMapEsplora(trackId){
+  var t=tracciati.find(function(x){return x.id===trackId;});
+  if(!t||!t.punti||!t.punti.length||!mapInstance)return;
+  var latlngs=t.punti.map(function(p){return [p.lat,p.lon];});
+  try{
+    mapInstance.fitBounds(L.latLngBounds(latlngs),{padding:[40,40],maxZoom:16});
+  }catch(e){}
+  mapInstance.closePopup();
+}
+
+// Azione bottone "Storico" nel popup: naviga allo Storico e scorre alla card
+function trkMapApriStorico(uscitaId){
+  mapInstance.closePopup();
+  // trovo il tab Storico e lo clicco (riuso listener showPanel)
+  var tabStorico=document.querySelector('.tab[onclick*="storico"]');
+  if(tabStorico){
+    tabStorico.click();
+  }
+  setTimeout(function(){
+    var card=document.querySelector('[data-uscita-id="'+uscitaId+'"]');
+    if(card){
+      card.scrollIntoView({behavior:'smooth',block:'center'});
+      card.style.transition='box-shadow .3s';
+      card.style.boxShadow='0 0 0 3px #e07b39';
+      setTimeout(function(){card.style.boxShadow='';},1800);
+    }
+  },300);
+}
+// ===== FINE TRACCIATI SU MAPPA =====
+
+function renderStats(){
+  var el=document.getElementById('stats-content');
+  if(!uscite.length){el.innerHTML='<div class="empty">Nessuna uscita registrata.</div>';return;}
+
+  // dati base
+  var tuttiCatture=uscite.flatMap(function(u){return u.catture;});
+  var totC=tuttiCatture.length;
+  var spigole=tuttiCatture.filter(function(c){return c.specie.includes('Spigola');}).length;
+  var pesoTot=tuttiCatture.filter(function(c){return c.peso;}).reduce(function(s,c){
+    var p=parseFloat(c.peso.replace('kg','').replace('g','').trim());
+    return s+(c.peso.includes('kg')?p*1000:p);
+  },0);
+  var mediaC=uscite.length?(totC/uscite.length).toFixed(1):0;
+  var topUscita=uscite.reduce(function(best,u){return u.catture.length>best.catture.length?u:best;},uscite[0]);
+
+  // catture per mese
+  var perMese={};
+  uscite.forEach(function(u){
+    if(!u.data)return;
+    var m=u.data.substring(0,7);
+    perMese[m]=(perMese[m]||0)+u.catture.length;
+  });
+  var mesiLabel=Object.keys(perMese).sort();
+  var mesiVal=mesiLabel.map(function(m){return perMese[m];});
+  var mesiDisplay=mesiLabel.map(function(m){var p=m.split('-');return p[1]+'/'+p[0];});
+
+  // catture per zona
+  var perZona={};
+  uscite.forEach(function(u){var z=u.zona||'N/D';perZona[z]=(perZona[z]||0)+u.catture.length;});
+  var zoneSort=Object.entries(perZona).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+
+  // peso medio per specie
+  var specieData={};
+  tuttiCatture.forEach(function(c){
+    if(!specieData[c.specie])specieData[c.specie]={n:0,pesi:[],lun:[]};
+    specieData[c.specie].n++;
+    if(c.peso){var p=parseFloat(c.peso.replace('kg','').replace('g','').trim());specieData[c.specie].pesi.push(c.peso.includes('kg')?p*1000:p);}
+    if(c.lunghezza){var l=parseFloat(c.lunghezza);if(!isNaN(l))specieData[c.specie].lun.push(l);}
+  });
+
+  // top marche
+  var perMarca={};
+  tuttiCatture.forEach(function(c){if(c.esca_marca&&c.esca_marca.trim()){var m=c.esca_marca.trim();perMarca[m]=(perMarca[m]||0)+1;}});
+  var marcaSort=Object.entries(perMarca).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+
+  // distribuzione taglie spigola
+  var taglieDist={u45:0,t45_50:0,t50_60:0,o60:0};
+  tuttiCatture.forEach(function(c){
+    if((c.specie||'').toLowerCase().indexOf('spigola')>=0||(c.specie||'').toLowerCase().indexOf('branzino')>=0){
+      var l=parseFloat(c.lunghezza);if(isNaN(l))return;
+      if(l<45)taglieDist.u45++;else if(l<50)taglieDist.t45_50++;else if(l<60)taglieDist.t50_60++;else taglieDist.o60++;
+    }
+  });
+  var totTaglie=taglieDist.u45+taglieDist.t45_50+taglieDist.t50_60+taglieDist.o60;
+
+  // esca produttività
+  var perEsca={};
+  tuttiCatture.forEach(function(c){if(c.esca){perEsca[c.esca]=(perEsca[c.esca]||0)+1;}});
+  var escaSort=Object.entries(perEsca).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+
+  // correlazioni
+  var perMarea={},perLuna={},perMeteo={};
+  uscite.forEach(function(u){
+    if(!u.meteo)u.meteo={};
+    var n=u.catture.length;
+    if(u.meteo.marea){perMarea[u.meteo.marea]=(perMarea[u.meteo.marea]||{n:0,c:0});perMarea[u.meteo.marea].n++;perMarea[u.meteo.marea].c+=n;}
+    if(u.meteo.luna){perLuna[u.meteo.luna]=(perLuna[u.meteo.luna]||{n:0,c:0});perLuna[u.meteo.luna].n++;perLuna[u.meteo.luna].c+=n;}
+    if(u.meteo.cielo){perMeteo[u.meteo.cielo]=(perMeteo[u.meteo.cielo]||{n:0,c:0});perMeteo[u.meteo.cielo].n++;perMeteo[u.meteo.cielo].c+=n;}
+  });
+  function mediaCorr(obj){return Object.entries(obj).map(function(e){return{k:e[0],media:(e[1].c/e[1].n).toFixed(1)};}).sort(function(a,b){return b.media-a.media;});}
+
+  var mareaNomi={'inizio_crescente':'↗ Inizio cresc.','crescente':'↑ Crescente','fine_crescente':'↑ Fine cresc.','inizio_calante':'↘ Inizio cal.','calante':'↓ Calante','fine_calante':'↓ Fine cal.'};
+  var lunaNomi={'nuova':'🌑 Nuova','crescente':'🌒 Crescente','piena':'🌕 Piena','calante':'🌘 Calante'};
+
+  el.innerHTML=
+  // CARD RIEPILOGATIVE
+  '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem">'+
+  '<div class="stat-card"><div class="stat-num">'+uscite.length+'</div><div class="stat-label">Uscite totali</div></div>'+
+  '<div class="stat-card"><div class="stat-num">'+totC+'</div><div class="stat-label">Catture totali</div></div>'+
+  '<div class="stat-card"><div class="stat-num">'+spigole+'</div><div class="stat-label">Spigole</div></div>'+
+  '</div>'+
+  '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem">'+
+  '<div class="stat-card"><div class="stat-num">'+mediaC+'</div><div class="stat-label">Media catture/uscita</div></div>'+
+  '<div class="stat-card"><div class="stat-num">'+(pesoTot>=1000?(pesoTot/1000).toFixed(1)+'kg':pesoTot.toFixed(0)+'g')+'</div><div class="stat-label">Peso totale</div></div>'+
+  '<div class="stat-card"><div class="stat-num">'+topUscita.catture.length+'</div><div class="stat-label">Record uscita '+(topUscita.data?fmtData(topUscita.data):'')+'</div></div>'+
+  '</div>'+
+
+  // GRAFICO CATTURE PER MESE
+  (mesiLabel.length?'<div class="card"><div class="section-title">Catture per mese</div><canvas id="chart-mesi" height="120"></canvas></div>':'')+
+
+  // GRAFICO CATTURE PER ZONA
+  (zoneSort.length?'<div class="card"><div class="section-title">Catture per zona</div><canvas id="chart-zone" height="'+(zoneSort.length*40)+'"></canvas></div>':'')+
+
+  // TABELLA SPECIE
+  '<div class="card"><div class="section-title">Dettaglio per specie</div>'+
+  '<table style="width:100%;font-size:13px;border-collapse:collapse">'+
+  '<tr style="font-size:11px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">'+
+  '<td style="padding:6px 4px">Specie</td><td style="padding:6px 4px;text-align:center">N.</td><td style="padding:6px 4px;text-align:center">Peso medio</td><td style="padding:6px 4px;text-align:center">Lung. media</td></tr>'+
+  Object.entries(specieData).sort(function(a,b){return b[1].n-a[1].n;}).map(function(e){
+    var pm=e[1].pesi.length?(e[1].pesi.reduce(function(s,v){return s+v;},0)/e[1].pesi.length):'—';
+    var lm=e[1].lun.length?(e[1].lun.reduce(function(s,v){return s+v;},0)/e[1].lun.length).toFixed(0)+'cm':'—';
+    return '<tr style="border-bottom:0.5px solid #f0f4f8"><td style="padding:7px 4px">'+e[0]+'</td><td style="padding:7px 4px;text-align:center"><span class="badge">'+e[1].n+'</span></td><td style="padding:7px 4px;text-align:center">'+(pm!=='—'?(pm>=1000?(pm/1000).toFixed(2)+'kg':pm.toFixed(0)+'g'):'—')+'</td><td style="padding:7px 4px;text-align:center">'+lm+'</td></tr>';
+  }).join('')+'</table></div>'+
+
+  // TABELLA ESCHE
+  (escaSort.length?'<div class="card"><div class="section-title">Esche più produttive</div>'+
+  escaSort.map(function(e,i){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0f4f8;font-size:14px"><span>'+(i+1)+'. '+e[0]+'</span><span class="badge">'+e[1]+' cat.</span></div>';}).join('')+'</div>':'')+
+
+  // TOP MARCHE
+  (marcaSort.length?'<div class="card"><div class="section-title">🏷 Top marche per catture</div>'+
+  marcaSort.map(function(e,i){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0f4f8;font-size:14px"><span>'+(i+1)+'. '+e[0]+'</span><span class="badge">'+e[1]+' cat.</span></div>';}).join('')+'</div>':'')+
+
+  // DISTRIBUZIONE TAGLIE SPIGOLA
+  (totTaglie>0?'<div class="card"><div class="section-title">📏 Distribuzione taglie spigola</div><div style="font-size:11px;color:var(--muted);margin-bottom:10px">'+totTaglie+' spigole con lunghezza registrata</div>'+
+  [{label:'< 45 cm',val:taglieDist.u45,col:'#e07b39'},{label:'45–50 cm',val:taglieDist.t45_50,col:'#2a5298'},{label:'50–60 cm',val:taglieDist.t50_60,col:'#2d7a4a'},{label:'> 60 cm',val:taglieDist.o60,col:'#7b2d7a'}].map(function(r){var pct=totTaglie>0?Math.round(r.val/totTaglie*100):0;return '<div style="padding:7px 0;border-bottom:0.5px solid #f0f4f8"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:14px">'+r.label+'</span><span style="font-size:13px;font-weight:700;color:'+r.col+'">'+r.val+' ('+pct+'%)</span></div><div style="height:6px;background:#f0f4f8;border-radius:3px"><div style="width:'+pct+'%;height:6px;background:'+r.col+';border-radius:3px"></div></div></div>';}).join('')+'</div>':'')+
+
+  // CORRELAZIONI
+  '<div class="card"><div class="section-title">Media catture per fase marea</div>'+
+  mediaCorr(perMarea).map(function(e){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0f4f8;font-size:14px"><span>'+(mareaNomi[e.k]||e.k)+'</span><span class="badge">'+e.media+' cat./uscita</span></div>';}).join('')+'</div>'+
+
+  (Object.keys(perLuna).length?'<div class="card"><div class="section-title">Media catture per fase lunare</div>'+
+  mediaCorr(perLuna).map(function(e){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0f4f8;font-size:14px"><span>'+(lunaNomi[e.k]||e.k)+'</span><span class="badge">'+e.media+' cat./uscita</span></div>';}).join('')+'</div>':'')+
+
+  '<div class="card"><div class="section-title">Media catture per condizioni meteo</div>'+
+  mediaCorr(perMeteo).map(function(e){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0f4f8;font-size:14px"><span>'+e.k+'</span><span class="badge">'+e.media+' cat./uscita</span></div>';}).join('')+'</div>';
+
+  // TASSO DI SUCCESSO PER SPOT
+  var perSpot={};
+  uscite.forEach(function(u){
+    // Aggrega per spot_cattura se presente, altrimenti per spot uscita o zona
+    var catConSpot=u.catture.filter(function(c){return c.spot_cattura&&c.spot_cattura.trim();});
+    if(catConSpot.length){
+      catConSpot.forEach(function(c){
+        var k=c.spot_cattura;
+        if(!perSpot[k])perSpot[k]={usciteSet:{},totCat:0};
+        perSpot[k].usciteSet[u.id]=1;
+        perSpot[k].totCat++;
+      });
+    } else {
+      var k=u.spot||u.zona||'N/D';
+      if(!perSpot[k])perSpot[k]={usciteSet:{},totCat:0};
+      perSpot[k].usciteSet[u.id]=1;
+      perSpot[k].totCat+=u.catture.length;
+    }
+  });
+  var spotMediaSort=Object.entries(perSpot).map(function(e){
+    var nUscite=Object.keys(e[1].usciteSet).length;
+    return {nome:e[0],nUscite:nUscite,totCat:e[1].totCat,media:e[1].totCat/nUscite};
+  }).filter(function(e){return e.nUscite>=2;}).sort(function(a,b){return b.media-a.media;});
+  if(spotMediaSort.length){
+    var maxMedia=spotMediaSort[0].media;
+    el.innerHTML+='<div class="card"><div class="section-title">🎯 Produttività per spot</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Media catture per uscita · solo spot con almeno 2 uscite.</div>'+
+    spotMediaSort.map(function(e){
+      var col=e.media>=3?'#2d7a4a':e.media>=1.5?'#e07b39':'#2a5298';
+      var pct=Math.round(e.media/maxMedia*100);
+      return '<div style="padding:8px 0;border-bottom:0.5px solid #f0f4f8">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'+
+        '<span style="font-size:14px;font-weight:500">'+e.nome+'</span>'+
+        '<span style="font-size:13px;font-weight:700;color:'+col+'">'+e.media.toFixed(1)+' cat./usc.</span></div>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+        '<div style="flex:1;height:6px;background:#f0f4f8;border-radius:3px">'+
+        '<div style="width:'+pct+'%;height:6px;background:'+col+';border-radius:3px"></div></div>'+
+        '<span style="font-size:11px;color:var(--muted);white-space:nowrap">'+e.totCat+' cat. · '+e.nUscite+' usc.</span>'+
+        '</div></div>';
+    }).join('')+'</div>';
+  }
+
+  // MIGLIOR FASCIA ORARIA
+  var fasce={mattino:{label:'🌅 Mattino (5–10)',n:0,c:0},meta_mattina:{label:'☀️ Tarda mattina (10–13)',n:0,c:0},pomeriggio:{label:'🌤 Pomeriggio (13–17)',n:0,c:0},sera:{label:'🌆 Sera (17–21)',n:0,c:0},notte:{label:'🌙 Notte (21–5)',n:0,c:0}};
+  var hasOra=false;
+  uscite.forEach(function(u){
+    if(!u.ora)return;
+    hasOra=true;
+    var h=parseInt(u.ora.split(':')[0]);
+    var f=h>=5&&h<10?'mattino':h>=10&&h<13?'meta_mattina':h>=13&&h<17?'pomeriggio':h>=17&&h<21?'sera':'notte';
+    fasce[f].n++;fasce[f].c+=u.catture.length;
+  });
+  if(hasOra){
+    var fasceSort=Object.values(fasce).filter(function(f){return f.n>0;}).sort(function(a,b){return(b.c/b.n)-(a.c/a.n);});
+    el.innerHTML+='<div class="card"><div class="section-title">🕐 Miglior fascia oraria</div>'+
+    fasceSort.map(function(f){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0f4f8;font-size:14px">'+
+      '<span>'+f.label+'</span>'+
+      '<span style="display:flex;gap:6px"><span class="badge">'+( f.c/f.n).toFixed(1)+' cat./usc.</span>'+
+      '<span style="font-size:11px;color:var(--muted);align-self:center">'+f.n+' usc.</span></span></div>';
+    }).join('')+'</div>';
+  }
+
+  // COMBINAZIONE ESCA + ZONA
+  var combo={};
+  uscite.forEach(function(u){
+    if(!u.esca||!u.zona)return;
+    var k=u.esca+' · '+u.zona;
+    if(!combo[k])combo[k]={n:0,c:0};
+    combo[k].n++;combo[k].c+=u.catture.length;
+  });
+  var comboSort=Object.entries(combo).filter(function(e){return e[1].n>=2;}).sort(function(a,b){return(b[1].c/b[1].n)-(a[1].c/a[1].n);}).slice(0,5);
+  if(comboSort.length){
+    el.innerHTML+='<div class="card"><div class="section-title">🔗 Combinazioni esca + zona più produttive</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Solo combinazioni con almeno 2 uscite.</div>'+
+    comboSort.map(function(e,i){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid #f0f4f8;font-size:14px">'+
+      '<span>'+(i+1)+'. '+e[0]+'</span>'+
+      '<span style="display:flex;gap:6px"><span class="badge">'+(e[1].c/e[1].n).toFixed(1)+' cat./usc.</span>'+
+      '<span style="font-size:11px;color:var(--muted);align-self:center">'+e[1].n+' usc.</span></span></div>';
+    }).join('')+'</div>';
+  }
+
+  // CHART.JS
+  if(typeof Chart==='undefined'){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+    s.onload=function(){disegnaGrafici(mesiDisplay,mesiVal,zoneSort);};
+    document.head.appendChild(s);
+  } else {
+    disegnaGrafici(mesiDisplay,mesiVal,zoneSort);
+  }
+}
+
+function disegnaGrafici(mesiDisplay,mesiVal,zoneSort){
+  var blu='#2a5298',azzurro='#4a90d9';
+  var elMesi=document.getElementById('chart-mesi');
+  var elZone=document.getElementById('chart-zone');
+  if(elMesi){
+    var existing=Chart.getChart(elMesi);if(existing)existing.destroy();
+    new Chart(elMesi,{
+      type:'bar',
+      data:{labels:mesiDisplay,datasets:[{label:'Catture',data:mesiVal,backgroundColor:azzurro,borderRadius:6}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+    });
+  }
+  if(elZone){
+    var existing2=Chart.getChart(elZone);if(existing2)existing2.destroy();
+    new Chart(elZone,{
+      type:'bar',
+      data:{labels:zoneSort.map(function(e){return e[0];}),datasets:[{label:'Catture',data:zoneSort.map(function(e){return e[1];}),backgroundColor:blu,borderRadius:6}]},
+      options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{stepSize:1}}}}
+    });
+  }
+}
+function importaJSON(){
+  var input=document.getElementById('import-json-input');
+  input.value='';
+  input.click();
+}
+function leggiImportJSON(input){
+  var file=input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      var usciteData=[],tracciatiData=[],spotsData=[];
+      // Nuovo formato: {_format:'fd-v2', uscite:[], tracciati:[], spots:[]}
+      if(data&&typeof data==='object'&&!Array.isArray(data)&&data.uscite){
+        usciteData=Array.isArray(data.uscite)?data.uscite:[];
+        tracciatiData=Array.isArray(data.tracciati)?data.tracciati:[];
+        spotsData=Array.isArray(data.spots)?data.spots:[];
+      }
+      // Vecchio formato: array di uscite
+      else if(Array.isArray(data)){
+        usciteData=data;
+      }
+      else {
+        alert('⚠️ File non valido: formato non riconosciuto.');return;
+      }
+      var msg='Trovate '+usciteData.length+' uscite';
+      if(tracciatiData.length)msg+=', '+tracciatiData.length+' tracciati';
+      if(spotsData.length)msg+=', '+spotsData.length+' spot';
+      msg+=' nel file.\n\nScegli:\n- OK = unisci ai dati esistenti\n- Annulla = operazione annullata';
+      if(!confirm(msg))return;
+      // Merge uscite
+      var idEsistenti=new Set(uscite.map(function(u){return u.id;}));
+      var nuoveUscite=usciteData.filter(function(u){return !idEsistenti.has(u.id);});
+      uscite=uscite.concat(nuoveUscite);
+      uscite.sort(function(a,b){return (b.data||'').localeCompare(a.data||'');});
+      saveUscite();
+      // Merge tracciati
+      var nuoviTrk=0;
+      if(tracciatiData.length&&typeof tracciati!=='undefined'){
+        var idTrkEsist=new Set(tracciati.map(function(t){return t.id;}));
+        var nuovi=tracciatiData.filter(function(t){return !idTrkEsist.has(t.id);});
+        tracciati=tracciati.concat(nuovi);
+        trkSaveTracciati();
+        nuoviTrk=nuovi.length;
+      }
+      // Merge spots (4.3.47)
+      var nuoviSpot=0;
+      if(spotsData.length&&typeof spots!=='undefined'){
+        var idSpotEsist=new Set(spots.map(function(s){return s.id;}));
+        var nuoviS=spotsData.filter(function(s){return s.id&&!idSpotEsist.has(s.id);});
+        spots=spots.concat(nuoviS);
+        saveSpots();
+        nuoviSpot=nuoviS.length;
+      }
+      var finale='✅ Importate '+nuoveUscite.length+' uscite nuove. Duplicate ignorate: '+(usciteData.length-nuoveUscite.length)+'.';
+      if(tracciatiData.length)finale+='\n✅ Importati '+nuoviTrk+' tracciati nuovi. Duplicati ignorati: '+(tracciatiData.length-nuoviTrk)+'.';
+      if(spotsData.length)finale+='\n✅ Importati '+nuoviSpot+' spot nuovi. Duplicati ignorati: '+(spotsData.length-nuoviSpot)+'.';
+      alert(finale);
+      renderStorico();
+      if(typeof trkRenderLista==='function')trkRenderLista();
+      if(typeof renderSpotMappa==='function')renderSpotMappa();
+      if(typeof populateSpotDropdown==='function')populateSpotDropdown();
+    }catch(err){alert('⚠️ Errore nella lettura del file JSON.');}
+  };
+  reader.readAsText(file);
+}
+function cancellatutti(){
+  if(!confirm('Sei sicuro? Questa operazione cancellerà TUTTE le uscite salvate.\nL\'operazione non è reversibile.'))return;
+  if(!confirm('Conferma definitiva: vuoi davvero cancellare tutti i dati?'))return;
+  uscite=[];saveUscite();renderStorico();
+  var statsEl=document.getElementById('stats-content');
+  if(statsEl)statsEl.innerHTML='<div class="empty">Nessuna uscita registrata.</div>';
+  alert('✅ Tutti i dati sono stati cancellati.');
+}
+function esportaCSV(){
+  if(!uscite.length){alert('Nessuna uscita da esportare.');return;}
+  var h=['Data','Ora','Pescatore','Zona','Spot','Lat','Lon','Cielo','Vento km/h','Dir.vento','Temp aria °C','Temp acqua °C','Marea','Livello marea','Pressione','Tecnica','Voto','N.Catture','Catture','Note'];
+  var rows=uscite.map(function(u){if(!u.meteo)u.meteo={};if(!u.catture)u.catture=[];return[u.data,u.ora,u.pescatore,u.zona,u.spot,u.lat,u.lon,u.meteo.cielo,u.meteo.vento_vel,u.meteo.vento_dir,u.meteo.temp,u.meteo.temp_acqua,u.meteo.marea,u.meteo.livello_marea,u.meteo.pressione,u.tecnica,u.voto,u.catture.length,u.catture.map(function(c){return c.specie+(c.peso?' '+c.peso:'')+(c.esca?' '+c.esca:'')+(c.esca_taglia?' '+c.esca_taglia:'')+(c.esca_colore?' '+c.esca_colore:'');}).join('; '),u.note].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';});});
+  dlFile([h.join(',')].concat(rows.map(function(r){return r.join(',');})).join('\n'),'diario_pesca.csv','text/csv');
+}
+function esportaJSON(){
+  if(!uscite.length&&(typeof tracciati==='undefined'||!tracciati.length)){alert('Nessun dato da esportare.');return;}
+  var ua=navigator.userAgent;
+  var dev='Desktop';
+  if(/iPhone/i.test(ua))dev='iPhone';
+  else if(/iPad/i.test(ua))dev='iPad';
+  else if(/Android/i.test(ua))dev='Android';
+  else if(/Macintosh/i.test(ua))dev='Mac';
+  else if(/Windows/i.test(ua))dev='Windows';
+  var oggi=new Date();
+  var gg=String(oggi.getDate()).padStart(2,'0');
+  var mm=String(oggi.getMonth()+1).padStart(2,'0');
+  var aaaa=oggi.getFullYear();
+  var nome='diario_pesca_'+dev+'_'+gg+'-'+mm+'-'+aaaa+'.json';
+  var payload={
+    _format:'fd-v2',
+    _versione:'4.3.65',
+    uscite:uscite,
+    tracciati:typeof tracciati!=='undefined'?tracciati:[],
+    spots:typeof spots!=='undefined'?spots:[]
+  };
+  dlFile(JSON.stringify(payload,null,2),nome,'application/json');
+}
+// FIX 4.3.54: export robusto a cascata. Filesystem+Share → Share.text → clipboard+alert.
+// Mostra ogni step in un overlay debug a schermo, così è ispezionabile senza Web Inspector.
+function fdDebug(msg){
+  try{
+    var box=document.getElementById('fd-debug-box');
+    if(!box){
+      box=document.createElement('div');
+      box.id='fd-debug-box';
+      box.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;max-height:40vh;overflow:auto;background:rgba(0,0,0,.85);color:#0f0;font:11px/1.3 monospace;padding:8px;border-radius:6px;z-index:99999;white-space:pre-wrap;word-break:break-word';
+      var close=document.createElement('div');
+      close.textContent='✕ chiudi debug';
+      close.style.cssText='color:#ff0;cursor:pointer;text-align:right;margin-bottom:4px;font-weight:bold';
+      close.onclick=function(){box.remove();};
+      box.appendChild(close);
+      document.body.appendChild(box);
+    }
+    var line=document.createElement('div');
+    var ts=new Date().toLocaleTimeString();
+    line.textContent='['+ts+'] '+msg;
+    box.appendChild(line);
+    box.scrollTop=box.scrollHeight;
+  }catch(e){}
+}
+function dlFile(c,n,t){
+  var isNative=window.Capacitor && typeof window.Capacitor.isNativePlatform==='function' && window.Capacitor.isNativePlatform();
+  if(!isNative){
+    // Browser desktop / web: pattern classico
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([c],{type:t}));
+    a.download=n;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return;
+  }
+  // ===== PERCORSO NATIVO iOS/Android =====
+  fdDebug('Export start: '+n+' ('+c.length+' chars)');
+  fdDebug('Capacitor.Plugins keys: '+Object.keys((window.Capacitor&&window.Capacitor.Plugins)||{}).join(','));
+
+  var Filesystem=null, Share=null;
+  try{
+    Filesystem=window.Capacitor.registerPlugin('Filesystem');
+    fdDebug('Filesystem proxy: '+(Filesystem?'OK':'NULL')+' writeFile='+typeof (Filesystem&&Filesystem.writeFile));
+  }catch(e){fdDebug('registerPlugin Filesystem ERR: '+(e.message||e));}
+  try{
+    Share=window.Capacitor.registerPlugin('Share');
+    fdDebug('Share proxy: '+(Share?'OK':'NULL')+' share='+typeof (Share&&Share.share));
+  }catch(e){fdDebug('registerPlugin Share ERR: '+(e.message||e));}
+
+  // Tentativo 1: Filesystem.writeFile + Share.share({url})
+  var tryFsAndShare=function(){
+    if(!Filesystem || typeof Filesystem.writeFile!=='function'){
+      fdDebug('SKIP step1: Filesystem non disponibile');
+      return tryShareText();
+    }
+    fdDebug('Step1: writeFile su CACHE...');
+    Filesystem.writeFile({
+      path:n,
+      data:c,
+      directory:'CACHE',
+      encoding:'utf8'
+    }).then(function(res){
+      fdDebug('writeFile OK uri='+(res&&res.uri?res.uri:'?'));
+      if(!Share || typeof Share.share!=='function'){
+        fdDebug('Share non disponibile, file salvato in CACHE ma non condiviso');
+        alert('File salvato in cache app: '+n+'\n(Share non disponibile per condividerlo)');
+        return;
+      }
+      fdDebug('Step1b: Share.share({url})...');
+      return Share.share({
+        title:n,
+        url:res.uri,
+        dialogTitle:'Esporta '+n
+      }).then(function(){
+        fdDebug('Share OK');
+      }).catch(function(e){
+        fdDebug('Share ERR: '+(e&&(e.message||JSON.stringify(e))));
+        tryShareText();
+      });
+    }).catch(function(e){
+      fdDebug('writeFile ERR: '+(e&&(e.message||JSON.stringify(e))));
+      tryShareText();
+    });
+  };
+  // Tentativo 2: Share.share con text (no file, solo testo)
+  var tryShareText=function(){
+    if(!Share || typeof Share.share!=='function'){
+      fdDebug('SKIP step2: Share non disponibile');
+      return tryClipboard();
+    }
+    fdDebug('Step2: Share.share({text})...');
+    // iOS limita la lunghezza del text shareable; se >50KB salto
+    if(c.length>50000){
+      fdDebug('Payload >50KB, salto a clipboard');
+      return tryClipboard();
+    }
+    Share.share({title:n,text:c,dialogTitle:'Esporta '+n}).then(function(){
+      fdDebug('Share text OK');
+    }).catch(function(e){
+      fdDebug('Share text ERR: '+(e&&(e.message||JSON.stringify(e))));
+      tryClipboard();
+    });
+  };
+  // Tentativo 3: clipboard + alert
+  var tryClipboard=function(){
+    fdDebug('Step3: tentativo clipboard...');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(c).then(function(){
+        fdDebug('Clipboard OK ('+c.length+' chars)');
+        alert('JSON copiato negli appunti.\nIncolla in Note o Mail per salvarlo.');
+      }).catch(function(e){
+        fdDebug('Clipboard ERR: '+(e&&(e.message||e)));
+        alert('Esportazione fallita su tutti i metodi.\nVedi log debug a schermo.');
+      });
+    } else {
+      fdDebug('navigator.clipboard non disponibile');
+      alert('Esportazione fallita.\nVedi log debug a schermo.');
+    }
+  };
+  tryFsAndShare();
+}
+
+(function(){
+  initStorage();
+  var now=new Date();
+  document.getElementById('data').value=now.toISOString().split('T')[0];
+  var oraEl=document.getElementById('ora');
+  if(oraEl)oraEl.value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  populateSpotDropdown();
+  renderCattureCorrenti();
+  rilevafaseLunare(true);
+})();
+
+</script>
+
+<!-- ===== FAB TRACCIATO GPS + MODAL ===== -->
+<div id="fab-etichetta"></div>
+<div id="fab-tracciato" onclick="trkFabClick()" title="Tracciato GPS">🛰</div>
+<div id="fab-cattura" onclick="catFabClick()" title="Segna cattura">🪝</div>
+<div id="cattura-toast"></div>
+
+<div id="trk-modal" onclick="trkModalOutsideClick(event)">
+  <div id="trk-modal-card">
+    <div id="trk-modal-icon"></div>
+    <div id="trk-modal-title"></div>
+    <div id="trk-modal-body"></div>
+    <div id="trk-modal-actions">
+      <div class="btn" onclick="trkModalClose()">Annulla</div>
+      <div class="btn btn-primary" id="trk-modal-confirm" onclick="trkModalConfirm()">Conferma</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== TRACCIATO GPS =====
+var trk={
+  attivo:false,
+  punti:[],
+  spot_catture:[],
+  idCorrente:null,
+  tInizio:null,
+  watchHandle:null,
+  wakeLock:null,
+  timerUI:null,
+  timerBackup:null,
+  timerSampling:null,
+  ultimoPuntoSalvato:null,
+  azionePending:null,
+  ultimoTapCattura:0
+};
+// ===== WRAPPER GPS (v4.3.53) =====
+// Astrazione sorgente GPS: plugin nativo Capgo in app iOS, navigator.geolocation in browser.
+// FIX 4.3.53: API Capgo 8.x espone start()/stop(), NON più addWatcher()/removeWatcher().
+// Verificato sui sorgenti Swift v8.0.31. Il plugin accetta UN solo tracker attivo per volta:
+// chiamare start() due volte senza stop() in mezzo restituisce errore ALREADY_STARTED.
+// Per gestire il caso gpsGetCurrentPosition seguito da gpsAddWatcher uso un mutex BG_GEO_BUSY
+// e una coda pendente.
+var BG_GEO_PLUGIN=null; // cache lazy
+var BG_GEO_BUSY=false;  // true quando un start() è in corso
+var BG_GEO_PENDING=null;// callback in attesa di start successivo allo stop
+function gpsIsNative(){
+  return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+}
+function gpsBgPlugin(){
+  if(BG_GEO_PLUGIN)return BG_GEO_PLUGIN;
+  if(window.Capacitor && typeof window.Capacitor.registerPlugin==='function'){
+    try{
+      BG_GEO_PLUGIN=window.Capacitor.registerPlugin('BackgroundGeolocation');
+      console.log('[GPS] Plugin Capgo registrato:',!!BG_GEO_PLUGIN,'start:',typeof (BG_GEO_PLUGIN&&BG_GEO_PLUGIN.start));
+      return BG_GEO_PLUGIN;
+    } catch(e){
+      console.error('[GPS] registerPlugin fallito:',e);
+      return null;
+    }
+  }
+  return null;
+}
+// Helper: stop sicuro (non rejecta se non c'è un tracker attivo)
+function gpsNativeStop(plugin,cb){
+  if(!plugin || typeof plugin.stop!=='function'){if(cb)cb();return;}
+  try{
+    var p=plugin.stop();
+    if(p && typeof p.then==='function'){
+      p.then(function(){BG_GEO_BUSY=false;if(cb)cb();})
+       .catch(function(e){console.warn('[GPS] stop err',e);BG_GEO_BUSY=false;if(cb)cb();});
+    } else {
+      BG_GEO_BUSY=false;if(cb)cb();
+    }
+  } catch(e){
+    console.warn('[GPS] stop throw',e);BG_GEO_BUSY=false;if(cb)cb();
+  }
+}
+// Lettura GPS una tantum (per cold start, spot save, segna cattura)
+function gpsGetCurrentPosition(onOk,onErr,opts){
+  opts=opts||{};
+  // FIX 4.3.56 — Se il tracciato è attivo NON toccare il plugin nativo.
+  // Capgo accetta un solo tracker per volta: fermarlo per un fix singolo lascia
+  // il watcher morto e la traccia muore (bug verificato test 03/05/2026).
+  // Riusiamo l'ultimo punto del watcher, che ha campionamento ~7-15s — per pesca
+  // a spinning a barca ferma lo scarto è sub-metrico.
+  if(typeof trk!=='undefined' && trk.attivo && trk.ultimoPuntoSalvato){
+    var last=trk.ultimoPuntoSalvato;
+    var ageMs=Date.now()-last.t;
+    console.log('[GPS] tracciato attivo, riuso ultimo punto (eta',Math.round(ageMs/1000)+'s)');
+    setTimeout(function(){
+      onOk({
+        coords:{
+          latitude:last.lat,
+          longitude:last.lon,
+          accuracy:null
+        },
+        timestamp:last.t
+      });
+    },0);
+    return;
+  }
+  var plugin=gpsIsNative()?gpsBgPlugin():null;
+  if(plugin && typeof plugin.start==='function'){
+    var run=function(){
+      var done=false;
+      var to=null;
+      BG_GEO_BUSY=true;
+      var cleanup=function(){
+        if(to){clearTimeout(to);to=null;}
+        gpsNativeStop(plugin);
+      };
+      try{
+        plugin.start({requestPermissions:true,stale:true},function(location,error){
+          if(done)return;
+          if(error){
+            done=true;
+            console.warn('[GPS] start error:',JSON.stringify(error));
+            cleanup();
+            if(onErr)onErr({code:error.code||0,message:error.message||'GPS error'});
+            return;
+          }
+          if(location){
+            done=true;
+            cleanup();
+            onOk({
+              coords:{
+                latitude:location.latitude,
+                longitude:location.longitude,
+                accuracy:location.accuracy||null
+              },
+              timestamp:location.time||Date.now()
+            });
+          }
+        });
+      } catch(e){
+        console.error('[GPS] start throw:',e);
+        BG_GEO_BUSY=false;
+        if(!done){done=true;if(onErr)onErr({code:0,message:'start failed'});}
+        return;
+      }
+      to=setTimeout(function(){
+        if(!done){done=true;cleanup();if(onErr)onErr({code:3,message:'Timeout GPS'});}
+      },opts.timeout||10000);
+    };
+    if(BG_GEO_BUSY){
+      // C'è già un tracker attivo: lo fermo e poi avvio il singolo fix.
+      gpsNativeStop(plugin,run);
+    } else {
+      run();
+    }
+  } else {
+    // Fallback web
+    if(!navigator.geolocation){if(onErr)onErr({code:0,message:'GPS non supportato'});return;}
+    navigator.geolocation.getCurrentPosition(onOk,onErr,Object.assign({enableHighAccuracy:true,timeout:10000,maximumAge:0},opts));
+  }
+}
+// Watcher continuo per tracciato. Callback riceve (lat,lon,t_ms,acc).
+// Restituisce un handle (oggetto) da passare a gpsRemoveWatcher.
+function gpsAddWatcher(callback,onErr){
+  var plugin=gpsIsNative()?gpsBgPlugin():null;
+  if(plugin && typeof plugin.start==='function'){
+    var handle={native:true,plugin:plugin,active:false};
+    var run=function(){
+      BG_GEO_BUSY=true;
+      try{
+        plugin.start({
+          backgroundMessage:'Tracciamento pesca attivo',
+          backgroundTitle:'Fishing Diary',
+          requestPermissions:true,
+          stale:false,
+          distanceFilter:0
+        },function(location,error){
+          if(error){
+            console.warn('[GPS] watcher error:',JSON.stringify(error));
+            if(onErr)onErr(error);
+            return;
+          }
+          if(location){
+            callback(location.latitude,location.longitude,location.time||Date.now(),location.accuracy);
+          }
+        });
+        handle.active=true;
+        console.log('[GPS] watcher continuo avviato (Capgo start)');
+      } catch(e){
+        console.error('[GPS] start (continuo) throw:',e);
+        BG_GEO_BUSY=false;
+        if(onErr)onErr({code:0,message:'start failed'});
+      }
+    };
+    if(BG_GEO_BUSY){
+      // C'è un fix singolo in corso: aspetto che finisca, poi avvio.
+      gpsNativeStop(plugin,run);
+    } else {
+      run();
+    }
+    return handle;
+  } else {
+    // Fallback web
+    if(!navigator.geolocation){if(onErr)onErr({code:0,message:'GPS non supportato'});return null;}
+    var watchId=navigator.geolocation.watchPosition(function(pos){
+      callback(pos.coords.latitude,pos.coords.longitude,Date.now(),pos.coords.accuracy);
+    },function(err){
+      console.warn('[GPS] web error:',err);
+      if(onErr)onErr(err);
+    },{enableHighAccuracy:true,maximumAge:0});
+    return {native:false,id:watchId};
+  }
+}
+function gpsRemoveWatcher(handle){
+  if(!handle)return;
+  if(handle.native && handle.plugin){
+    gpsNativeStop(handle.plugin);
+    handle.active=false;
+  } else if(!handle.native && handle.id!==null && handle.id!==undefined){
+    try{navigator.geolocation.clearWatch(handle.id);}catch(e){}
+  }
+}
+// ===== FINE WRAPPER GPS =====
+
+// Parametri campionamento GPS (v4.3.45)
+var TRK_SAMPLE_MS=15000;  // ogni 15s
+var TRK_MIN_DIST_M=8;     // deduplica spaziale 8m
+var tracciati=[];
+var TRK_STORAGE='pesca_tracciati';
+var TRK_BACKUP='pesca_tracciato_in_corso';
+
+function trkInitStorage(){
+  try{var r=localStorage.getItem(TRK_STORAGE);if(r)tracciati=JSON.parse(r);}catch(e){tracciati=[];}
+  // recupero backup in caso di crash
+  try{
+    var b=localStorage.getItem(TRK_BACKUP);
+    if(b){
+      var bk=JSON.parse(b);
+      if(bk&&bk.punti&&bk.punti.length>0){
+        var recupera=confirm('🛰 Tracciato interrotto recuperato\n\n'+bk.punti.length+' punti registrati il '+bk.data_inizio+'\nDurata: '+Math.round((bk.punti[bk.punti.length-1].t-bk.punti[0].t)/60000)+' min\n\nSalvarlo nello storico?');
+        if(recupera){
+          var t={
+            id:bk.id||Date.now(),
+            data_inizio:bk.data_inizio,
+            data_fine:new Date(bk.punti[bk.punti.length-1].t).toISOString(),
+            punti:bk.punti,
+            spot_catture:Array.isArray(bk.spot_catture)?bk.spot_catture:[],
+            uscita_id:null,
+            note:'Tracciato recuperato da sessione interrotta'
+          };
+          tracciati.push(t);
+          trkSaveTracciati();
+        }
+        localStorage.removeItem(TRK_BACKUP);
+      }
+    }
+  }catch(e){}
+}
+
+function trkSaveTracciati(){
+  try{localStorage.setItem(TRK_STORAGE,JSON.stringify(tracciati));}
+  catch(e){alert('⚠️ Spazio browser pieno — tracciato non salvato.\nEsporta i dati in JSON per liberare spazio.');}
+}
+
+function trkBackupInCorso(){
+  try{
+    if(!trk.attivo)return;
+    var bk={id:trk.idCorrente,data_inizio:new Date(trk.tInizio).toISOString(),punti:trk.punti,spot_catture:trk.spot_catture};
+    localStorage.setItem(TRK_BACKUP,JSON.stringify(bk));
+  }catch(e){}
+}
+
+// Distanza Haversine in metri tra due punti lat/lon
+function trkDistMetri(p1,p2){
+  var R=6371000;
+  var toRad=function(d){return d*Math.PI/180;};
+  var dLat=toRad(p2.lat-p1.lat);
+  var dLon=toRad(p2.lon-p1.lon);
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+        Math.cos(toRad(p1.lat))*Math.cos(toRad(p2.lat))*
+        Math.sin(dLon/2)*Math.sin(dLon/2);
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+
+function trkCalcolaKmCorrente(){
+  if(trk.punti.length<2)return 0;
+  var tot=0;
+  for(var i=1;i<trk.punti.length;i++){
+    tot+=trkDistMetri(trk.punti[i-1],trk.punti[i]);
+  }
+  return tot/1000;
+}
+
+function trkAggiornaUI(){
+  var fab=document.getElementById('fab-tracciato');
+  var et=document.getElementById('fab-etichetta');
+  var fabCat=document.getElementById('fab-cattura');
+  if(!fab||!et)return;
+  if(trk.attivo){
+    fab.classList.add('attivo');
+    fab.textContent='⏹';
+    var mmss=Math.floor((Date.now()-trk.tInizio)/1000);
+    var mm=Math.floor(mmss/60);
+    var ss=mmss%60;
+    var km=trkCalcolaKmCorrente().toFixed(2);
+    et.textContent='🛰 '+trk.punti.length+' pt · '+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0')+' · '+km+' km';
+    et.classList.add('visible');
+    if(fabCat)fabCat.classList.add('mostrato');
+  } else {
+    fab.classList.remove('attivo');
+    fab.textContent='🛰';
+    et.classList.remove('visible');
+    if(fabCat)fabCat.classList.remove('mostrato');
+  }
+}
+
+function trkFabClick(){
+  if(trk.attivo){
+    trkModalShow({
+      icon:'⏹',
+      title:'Fermare il tracciato?',
+      body:trk.punti.length+' punti · '+Math.floor((Date.now()-trk.tInizio)/60000)+' min · '+trkCalcolaKmCorrente().toFixed(2)+' km',
+      confirmText:'Sì, ferma',
+      azione:'stop'
+    });
+  } else {
+    trkModalShow({
+      icon:'🛰',
+      title:'Avviare tracciato GPS?',
+      body:'Il tracciato registrerà il percorso anche con app in background o schermo bloccato.',
+      confirmText:'Avvia',
+      azione:'start'
+    });
+  }
+}
+
+function trkModalShow(opts){
+  document.getElementById('trk-modal-icon').textContent=opts.icon;
+  document.getElementById('trk-modal-title').textContent=opts.title;
+  if(opts.bodyHtml){
+    document.getElementById('trk-modal-body').innerHTML=opts.bodyHtml;
+  } else {
+    document.getElementById('trk-modal-body').textContent=opts.body;
+  }
+  document.getElementById('trk-modal-confirm').textContent=opts.confirmText;
+  trk.azionePending=opts.azione;
+  document.getElementById('trk-modal').classList.add('visible');
+}
+function trkModalClose(){
+  document.getElementById('trk-modal').classList.remove('visible');
+  trk.azionePending=null;
+}
+function trkModalOutsideClick(e){
+  if(e.target.id==='trk-modal')trkModalClose();
+}
+function trkModalConfirm(){
+  var a=trk.azionePending;
+  trkModalClose();
+  if(a==='start')trkStart();
+  else if(a==='stop')trkStop();
+  else if(a==='cattura')catSalva();
+}
+
+function trkStart(){
+  trk.attivo=true;
+  trk.punti=[];
+  trk.spot_catture=[];
+  trk.idCorrente=Date.now();
+  trk.tInizio=Date.now();
+  trk.ultimoPuntoSalvato=null;
+
+  // FIX 4.3.46 — Cold start GPS:
+  // Aspetta un primo fix valido PRIMA di avviare watch + interval.
+  // Risolve il gap iniziale (30-90s) durante il quale getCurrentPosition
+  // restituiva fix imprecisi o nulli (problema visto nel test 25/04 a Trivignano).
+  var fab=document.getElementById('fab-tracciato');
+  if(fab){fab.textContent='⏳';fab.style.background='#e07b39';}
+
+  gpsGetCurrentPosition(
+    function(pos){
+      // Guard: utente potrebbe aver premuto Stop durante l'attesa
+      if(!trk.attivo)return;
+      // Primo fix valido: salva e avvia il tracking continuo
+      trkProcessaPosizione(pos.coords.latitude,pos.coords.longitude,pos.timestamp||Date.now(),pos.coords.accuracy);
+      if(fab){fab.textContent='🛰';fab.style.background='';}
+      avviaTracking();
+      // 4.3.64 — snapshot meteo inizio uscita (asincrono, non blocca).
+      // Utile per analisi anche delle uscite bianche come controllo negativo (decisione D4).
+      if(typeof cpsmFetchMeteoAtPoint==='function'){
+        cpsmFetchMeteoAtPoint(pos.coords.latitude,pos.coords.longitude).then(function(meteo){
+          if(meteo)trk.meteo_inizio_uscita=meteo;
+          trkBackupInCorso();
+        }).catch(function(){/* silente */});
+      }
+    },
+    function(err){
+      console.error('GPS cold start fallito:',err);
+      alert('⚠️ GPS non disponibile. Assicurati di essere all\'aperto e di aver dato i permessi all\'app.');
+      trk.attivo=false;
+      if(fab){fab.textContent='🛰';fab.style.background='';fab.classList.remove('attivo');}
+    },
+    {enableHighAccuracy:true,timeout:60000,maximumAge:0}
+  );
+}
+
+// Avvia tracking continuo DOPO il primo fix valido.
+// In app nativa: plugin Capgo (background OK).
+// In browser: navigator.geolocation.watchPosition + setInterval di backup + Wake Lock.
+function avviaTracking(){
+  if(!trk.attivo)return;
+
+  // Wake Lock e setInterval di backup SOLO in fallback web.
+  // In app nativa il plugin gira come servizio iOS, schermo libero di spegnersi.
+  if(!gpsIsNative()){
+    if('wakeLock' in navigator){
+      navigator.wakeLock.request('screen').then(function(lock){
+        trk.wakeLock=lock;
+        lock.addEventListener('release',function(){trk.wakeLock=null;});
+      }).catch(function(){});
+    }
+    // setInterval: forza campionamento ogni 15s, indipendente dal sistema.
+    // Necessario in WebView per coprire i casi in cui watchPosition non spara aggiornamenti.
+    trk.timerSampling=setInterval(function(){
+      gpsGetCurrentPosition(function(pos){
+        trkProcessaPosizione(pos.coords.latitude,pos.coords.longitude,pos.timestamp||Date.now(),pos.coords.accuracy);
+      },function(err){
+        console.warn('GPS errore tracciato (interval):',err);
+      },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
+    },TRK_SAMPLE_MS);
+  }
+
+  // Watcher continuo (plugin nativo o watchPosition web)
+  trk.watchHandle=gpsAddWatcher(function(lat,lon,t,acc){
+    trkProcessaPosizione(lat,lon,t,acc);
+  },function(err){
+    console.warn('GPS errore tracciato (watch):',err);
+  });
+
+  // UI live ogni secondo
+  trk.timerUI=setInterval(trkAggiornaUI,1000);
+  // Backup ogni minuto
+  trk.timerBackup=setInterval(trkBackupInCorso,60000);
+
+  trkAggiornaUI();
+}
+
+// Deduplica spaziale unificata + filtro accuracy (v4.3.62):
+// - Punti con accuracy > 15m vengono scartati (più stretto rispetto a v4.3.50 che era 30m)
+// - Un punto viene salvato solo se dista almeno TRK_MIN_DIST_M metri dall'ultimo
+// - L'accuracy viene persistita nel punto per analisi post-uscita
+function trkProcessaPosizione(lat,lon,t,acc){
+  if(!trk.attivo)return;
+  // Filtro accuracy: scarta fix poco precisi (>15m). In laguna a cielo aperto sarà tipicamente <10m.
+  if(typeof acc==='number' && acc>15){
+    console.log('[GPS] punto scartato per accuracy bassa:',acc.toFixed(1),'m');
+    return;
+  }
+  var last=trk.ultimoPuntoSalvato;
+  if(last){
+    var dist=trkDistMetri({lat:last.lat,lon:last.lon},{lat:lat,lon:lon});
+    if(dist<TRK_MIN_DIST_M)return; // troppo vicino, scarta
+  }
+  trk.punti.push({lat:lat,lon:lon,t:t,acc:(typeof acc==='number'?acc:null)});
+  trk.ultimoPuntoSalvato={lat:lat,lon:lon,t:t};
+  trkAggiornaUI();
+}
+
+function trkStop(){
+  if(!trk.attivo)return;
+  if(trk.watchHandle){gpsRemoveWatcher(trk.watchHandle);trk.watchHandle=null;}
+  if(trk.timerUI){clearInterval(trk.timerUI);trk.timerUI=null;}
+  if(trk.timerBackup){clearInterval(trk.timerBackup);trk.timerBackup=null;}
+  if(trk.timerSampling){clearInterval(trk.timerSampling);trk.timerSampling=null;}
+  if(trk.wakeLock){trk.wakeLock.release();trk.wakeLock=null;}
+  // FIX 4.3.46: ripristina FAB se Stop premuto durante cold start (stato ⏳)
+  var fab=document.getElementById('fab-tracciato');
+  if(fab){fab.textContent='🛰';fab.style.background='';}
+
+  if(trk.punti.length>=2){
+    var t={
+      id:trk.idCorrente,
+      data_inizio:new Date(trk.tInizio).toISOString(),
+      data_fine:new Date().toISOString(),
+      punti:trk.punti.slice(),
+      spot_catture:trk.spot_catture.slice(),
+      uscita_id:null,
+      note:''
+    };
+    // 4.3.65 — copia snapshot meteo inizio uscita se presente
+    if(trk.meteo_inizio_uscita)t.meteo_inizio_uscita=trk.meteo_inizio_uscita;
+    tracciati.push(t);
+    trkSaveTracciati();
+  } else {
+    alert('⚠️ Tracciato troppo breve ('+trk.punti.length+' punti) — non salvato.');
+  }
+
+  try{localStorage.removeItem(TRK_BACKUP);}catch(e){}
+
+  trk.attivo=false;
+  trk.punti=[];
+  trk.spot_catture=[];
+  trk.idCorrente=null;
+  trk.tInizio=null;
+  trk.ultimoPuntoSalvato=null;
+  trk.meteo_inizio_uscita=null; // 4.3.65 — reset snapshot meteo
+  trkAggiornaUI();
+
+  // Se Storico è aperto, aggiorna la lista tracciati
+  if(document.getElementById('panel-storico').classList.contains('active')){
+    trkRenderLista();
+  }
+}
+
+// Calcolo metriche avanzate per un tracciato salvato
+function trkMetriche(t){
+  var punti=t.punti||[];
+  if(punti.length<2)return {km:0,durata_min:0,t_movimento_min:0,t_fermo_min:0,n_soste:0,vel_media_kmh:0,vel_max_kmh:0,n_spot_catture:0,zona:''};
+  var km=0,tMov=0,tFer=0,soste=[],velMax=0,kmMov=0;
+  var sostaCorrente=null;
+  for(var i=1;i<punti.length;i++){
+    var p1=punti[i-1],p2=punti[i];
+    var d=trkDistMetri(p1,p2);
+    var dt=(p2.t-p1.t)/1000;
+    km+=d/1000;
+    var velKmh=dt>0?(d/dt)*3.6:0;
+    if(velKmh>velMax&&velKmh<150)velMax=velKmh; // filtro outlier (>150 km/h = errore GPS)
+    if(velKmh<2){
+      tFer+=dt;
+      if(!sostaCorrente){sostaCorrente={lat:p2.lat,lon:p2.lon,tInizio:p1.t,tFine:p2.t};}
+      else{sostaCorrente.tFine=p2.t;sostaCorrente.lat=(sostaCorrente.lat+p2.lat)/2;sostaCorrente.lon=(sostaCorrente.lon+p2.lon)/2;}
+    } else {
+      tMov+=dt;
+      kmMov+=d/1000;
+      if(sostaCorrente){
+        if((sostaCorrente.tFine-sostaCorrente.tInizio)/60000>=5)soste.push(sostaCorrente);
+        sostaCorrente=null;
+      }
+    }
+  }
+  if(sostaCorrente&&(sostaCorrente.tFine-sostaCorrente.tInizio)/60000>=5)soste.push(sostaCorrente);
+  var durTot=(punti[punti.length-1].t-punti[0].t)/1000;
+  var velMedia=tMov>0?(kmMov/(tMov/3600)):0;
+  // Zona prevalente: derivata da uscita associata se presente
+  var zona='';
+  if(t.uscita_id){
+    var u=(typeof uscite!=='undefined'?uscite:[]).find(function(x){return x.id===t.uscita_id;});
+    if(u&&u.zona)zona=u.zona;
+  }
+  var nSpotCatture=Array.isArray(t.spot_catture)?t.spot_catture.length:0;
+  return {
+    km:km,
+    durata_min:durTot/60,
+    t_movimento_min:tMov/60,
+    t_fermo_min:tFer/60,
+    n_soste:soste.length,
+    soste:soste,
+    vel_media_kmh:velMedia,
+    vel_max_kmh:velMax,
+    n_spot_catture:nSpotCatture,
+    zona:zona
+  };
+}
+
+function trkFmtOra(isoStr){
+  try{
+    var d=new Date(isoStr);
+    return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }catch(e){return '';}
+}
+function trkFmtData(isoStr){
+  try{
+    var d=new Date(isoStr);
+    return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  }catch(e){return '';}
+}
+function trkFmtDurata(min){
+  var h=Math.floor(min/60);
+  var m=Math.round(min%60);
+  return h>0?(h+'h '+m+'m'):(m+'m');
+}
+
+function trkRenderLista(){
+  var cont=document.getElementById('trk-lista');
+  // Aggiorna sempre il contatore nell'header
+  var cnt=document.getElementById('trk-sezione-count');
+  if(cnt)cnt.textContent='('+(tracciati?tracciati.length:0)+')';
+  // Totale km nell'header
+  var totKm=0;
+  if(tracciati&&tracciati.length){
+    tracciati.forEach(function(t){ totKm+=trkMetriche(t).km; });
+  }
+  var totEl=document.getElementById('trk-sezione-totkm');
+  if(totEl)totEl.textContent=totKm>0?'· '+totKm.toFixed(1)+' km totali':'';
+  if(!cont)return;
+  if(!tracciati.length){
+    cont.innerHTML='<div class="empty" style="padding:1rem">Nessun tracciato registrato. Premi il pulsante 🛰 in basso a destra per iniziare.</div>';
+    return;
+  }
+  var ordinati=tracciati.slice().sort(function(a,b){return (b.data_inizio||'').localeCompare(a.data_inizio||'');});
+  cont.innerHTML=ordinati.map(function(t){
+    var m=trkMetriche(t);
+    var dataStr=trkFmtData(t.data_inizio);
+    var oraStr=trkFmtOra(t.data_inizio)+'–'+trkFmtOra(t.data_fine);
+    // stato associazione
+    var assocHtml='';
+    if(t.uscita_id){
+      var u=uscite.find(function(x){return x.id===t.uscita_id;});
+      if(u){
+        assocHtml='<div style="font-size:12px;color:#2d7a4a;margin-top:6px">🔗 Associato a: '+fmtData(u.data)+(u.spot?' — '+u.spot:'')+'</div>';
+      } else {
+        assocHtml='<div style="font-size:12px;color:#c0392b;margin-top:6px">⚠️ Uscita associata non più esistente</div>';
+      }
+    }
+    // dropdown associazione (uscite vicine ± 1 giorno)
+    var dataInizio=t.data_inizio?t.data_inizio.substring(0,10):'';
+    var candidate=uscite.filter(function(u){
+      if(!u.data||!dataInizio)return false;
+      var d1=new Date(u.data+'T00:00:00').getTime();
+      var d2=new Date(dataInizio+'T00:00:00').getTime();
+      return Math.abs(d1-d2)<=86400000*1;
+    });
+    var options='<option value="">— scegli uscita —</option>';
+    candidate.forEach(function(u){
+      var sel=u.id===t.uscita_id?' selected':'';
+      options+='<option value="'+u.id+'"'+sel+'>'+fmtData(u.data)+(u.ora?' '+u.ora:'')+(u.spot?' — '+u.spot:'')+(u.zona?' ('+u.zona+')':'')+'</option>';
+    });
+    return '<div class="uscita-card" style="border-left-color:#e07b39">'+
+      '<div class="uscita-header">'+
+        '<div>'+
+          '<div class="uscita-date">🛰 '+dataStr+'</div>'+
+          '<div class="uscita-spot">'+oraStr+' · '+trkFmtDurata(m.durata_min)+' · '+m.km.toFixed(2)+' km</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;align-items:center">'+
+          '<span style="font-size:12px;color:var(--muted)">'+(t.punti||[]).length+' pt</span>'+
+          '<div class="btn btn-sm btn-danger" onclick="trkElimina('+t.id+')">Elimina</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+
+        '<span class="badge">🏃 '+trkFmtDurata(m.t_movimento_min)+' in movimento</span>'+
+        '<span class="badge">⏸ '+trkFmtDurata(m.t_fermo_min)+' fermo</span>'+
+        '<span class="badge">📍 '+m.n_soste+' soste</span>'+
+        (Array.isArray(t.spot_catture)&&t.spot_catture.length>0?'<span class="badge" style="background:#fff3e8;color:#e07b39">🪝 '+t.spot_catture.length+' spot cattura</span>':'')+
+      '</div>'+
+      assocHtml+
+      '<div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
+        '<span style="font-size:12px;color:var(--muted)">Associa a uscita:</span>'+
+        '<div class="sel-wrap" style="flex:1;min-width:160px"><select onchange="trkAssocia('+t.id+',this.value)" style="padding:6px 24px 6px 8px;font-size:12px">'+options+'</select></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function trkAssocia(trackId,uscitaId){
+  var t=tracciati.find(function(x){return x.id===trackId;});
+  if(!t)return;
+  t.uscita_id=uscitaId?parseInt(uscitaId):null;
+  trkSaveTracciati();
+  trkRenderLista();
+  if(document.getElementById('panel-storico').classList.contains('active'))renderStorico();
+}
+
+function trkElimina(id){
+  if(!confirm('Eliminare questo tracciato? Operazione irreversibile.'))return;
+  tracciati=tracciati.filter(function(x){return x.id!==id;});
+  trkSaveTracciati();
+  trkRenderLista();
+  if(document.getElementById('panel-storico').classList.contains('active'))renderStorico();
+}
+
+// Ripristina Wake Lock quando la pagina torna visibile (iOS sospende in background)
+document.addEventListener('visibilitychange',function(){
+  if(!trk.attivo)return;
+  if(document.visibilityState==='visible'&&!trk.wakeLock&&'wakeLock' in navigator){
+    navigator.wakeLock.request('screen').then(function(lock){
+      trk.wakeLock=lock;
+      lock.addEventListener('release',function(){trk.wakeLock=null;});
+    }).catch(function(){});
+  }
+});
+
+function trkToggleSezione(){
+  var body=document.getElementById('trk-sezione-body');
+  var chev=document.getElementById('trk-sezione-chevron');
+  if(!body)return;
+  var aperto=body.style.display!=='none';
+  body.style.display=aperto?'none':'block';
+  if(chev)chev.textContent=aperto?'▼':'▲';
+  // Persistenza stato
+  try{localStorage.setItem('pesca_trk_sezione_aperta',aperto?'0':'1');}catch(e){}
+  if(!aperto)trkRenderLista();
+}
+
+// Ripristina stato sezione (aperta/chiusa) + aggiorna contatore al caricamento Storico
+function trkRipristinaStatoSezione(){
+  var body=document.getElementById('trk-sezione-body');
+  var chev=document.getElementById('trk-sezione-chevron');
+  var cnt=document.getElementById('trk-sezione-count');
+  if(cnt)cnt.textContent='('+(tracciati?tracciati.length:0)+')';
+  // Totale km
+  var totKm=0;
+  if(tracciati&&tracciati.length){
+    tracciati.forEach(function(t){ totKm+=trkMetriche(t).km; });
+  }
+  var totEl=document.getElementById('trk-sezione-totkm');
+  if(totEl)totEl.textContent=totKm>0?'· '+totKm.toFixed(1)+' km totali':'';
+  if(!body)return;
+  var stato='0';
+  try{stato=localStorage.getItem('pesca_trk_sezione_aperta')||'0';}catch(e){}
+  if(stato==='1'){
+    body.style.display='block';
+    if(chev)chev.textContent='▲';
+    trkRenderLista();
+  } else {
+    body.style.display='none';
+    if(chev)chev.textContent='▼';
+  }
+}
+
+// Inizializza all'avvio
+trkInitStorage();
+trkAggiornaUI();
+
+// ===== SEGNA CATTURA (FAB cattura, 4.3.41) =====
+function catFabClick(){
+  if(!trk.attivo)return; // safety
+  // Debounce: ignora tap ravvicinati (< 1 sec)
+  var ora=Date.now();
+  if(ora-trk.ultimoTapCattura<1000)return;
+  trk.ultimoTapCattura=ora;
+  // Apro modal conferma (riuso stesso modal del tracciato)
+  trkModalShow({
+    icon:'🪝',
+    title:'Segnare cattura qui?',
+    body:'Verrà registrata la posizione GPS corrente con timestamp.',
+    confirmText:'Sì, segna',
+    azione:'cattura'
+  });
+}
+
+function catSalva(){
+  if(!trk.attivo)return;
+  // FIX 4.3.56 — Lettura diretta dell'ultimo punto del watcher.
+  // Non chiamiamo più gpsGetCurrentPosition: con tracciato attivo fermerebbe
+  // il plugin Capgo (un solo tracker per volta) lasciando morto il watcher.
+  // Bug verificato sul test 03/05/2026: traccia interrotta esattamente al
+  // timestamp della cattura.
+  var last=trk.ultimoPuntoSalvato;
+  if(!last){
+    catToast('⚠️ GPS non ancora pronto',true);
+    return;
+  }
+  var nuovaCattura={
+    t:Date.now(),
+    lat:last.lat,
+    lon:last.lon,
+    accuracy:null,
+    meteo_pending:true  // 4.3.64 — sarà popolato meteo_at_capture al completamento del fetch
+  };
+  trk.spot_catture.push(nuovaCattura);
+  // Feedback tattile
+  if('vibrate' in navigator){try{navigator.vibrate(50);}catch(e){}}
+  // Backup immediato (così anche se crash non si perde la cattura segnata)
+  trkBackupInCorso();
+  catToast('🪝 Cattura segnata');
+  // 4.3.64 — fetch meteo asincrono (non blocca il salvataggio).
+  // Se fallisce entro CPSM_FETCH_TIMEOUT_MS (3s) il record resta con meteo_pending=true.
+  if(typeof cpsmFetchMeteoAtPoint==='function'){
+    cpsmFetchMeteoAtPoint(last.lat,last.lon).then(function(meteo){
+      if(!meteo)return;
+      nuovaCattura.meteo_at_capture=meteo;
+      if(meteo.fonte==='CPSM_realtime'){
+        delete nuovaCattura.meteo_pending;
+      }
+      trkBackupInCorso(); // backup aggiornato con meteo
+    }).catch(function(){/* silente: resta meteo_pending=true */});
+  }
+}
+
+function catToast(msg,isWarn){
+  var el=document.getElementById('cattura-toast');
+  if(!el)return;
+  el.textContent=msg;
+  el.classList.toggle('warn',!!isWarn);
+  el.classList.add('visible');
+  clearTimeout(el._timer);
+  el._timer=setTimeout(function(){el.classList.remove('visible');},2000);
+}
+// ===== FINE SEGNA CATTURA =====
+// ===== FINE TRACCIATO GPS =====
+
+// ===== BLOCCO C — METEO GEO-TEMPORALE (4.3.63 step 1: schema + utility) =====
+// Tabella delle stazioni CPSM per copertura laguna.
+// 4.3.65 — Tabella corretta dopo verifica empirica degli endpoint (11/05/2026):
+//   - Livello: 14 stazioni in laguna (sceglie la più vicina al pin cattura)
+//   - Vento: 13 stazioni (sceglie la più vicina)
+//   - Pressione: SOLO 2 stazioni misurano realmente (Palazzo Cavalli 1026, Acqua Alta 1021)
+//     → si usa sempre Palazzo Cavalli come default, dato considerato valido in tutta la laguna
+//   - Temp acqua: SOLO 1 stazione (Punta Salute 1025)
+//     → si usa sempre Punta Salute, dato considerato valido in tutta la laguna
+// Fonte: dati.venezia.it/CPSM, verifica empirica endpoint 11/05/2026.
+var CPSM_STAZIONI=[
+  // Stazioni che misurano LIVELLO + VENTO (le 5 originali pertinenti per pesca laguna)
+  {id:'1028',nome:'Laguna nord Saline',         lat:45.4956,lon:12.4719,misura:{livello:true, vento:true }},
+  {id:'1022',nome:'Diga sud Lido',              lat:45.4200,lon:12.4240,misura:{livello:true, vento:true }},
+  {id:'1032',nome:'Malamocco Porto',            lat:45.3397,lon:12.2919,misura:{livello:true, vento:true }},
+  {id:'1033',nome:'Chioggia porto',             lat:45.2325,lon:12.2806,misura:{livello:true, vento:true }},
+  {id:'1021',nome:'Piattaforma Acqua Alta Siap',lat:45.3231,lon:12.5147,misura:{livello:true, vento:true }}
+];
+// Stazioni fisse per variabili a singola fonte (4.3.65)
+var CPSM_STAZIONE_PRESSIONE_ID='1026';   // Palazzo Cavalli (centro Venezia, dato valido per tutta la laguna)
+var CPSM_STAZIONE_TEMP_ACQUA_ID='1025';  // Punta Salute Canal Grande (unica stazione che misura temp acqua)
+
+// Distanza haversine tra due punti in metri.
+function cpsmDistanzaMetri(lat1,lon1,lat2,lon2){
+  var R=6371000;
+  var toRad=function(d){return d*Math.PI/180;};
+  var dLat=toRad(lat2-lat1);
+  var dLon=toRad(lon2-lon1);
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+        Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*
+        Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Restituisce la stazione CPSM più vicina al punto (lat,lon) che misura `variabile`.
+// `variabile` ∈ {'livello','vento'}. Pressione e temp_acqua usano stazioni fisse, non questa.
+function cpsmStazionePiuVicina(lat,lon,variabile){
+  var candidate=CPSM_STAZIONI.filter(function(s){return s.misura[variabile]===true;});
+  if(candidate.length===0)return null;
+  var migliore=null;var distMin=Infinity;
+  candidate.forEach(function(s){
+    var d=cpsmDistanzaMetri(lat,lon,s.lat,s.lon);
+    if(d<distMin){distMin=d;migliore=s;}
+  });
+  return {stazione:migliore,distanza_m:Math.round(distMin)};
+}
+
+// Schema record meteo_at_capture (riferimento, non costruttore).
+// Popolato da cpsmFetchMeteoAtPoint() (4.3.64).
+// Campi nel record cattura (sotto-oggetto opzionale):
+//   meteo_at_capture: {
+//     fonte: 'CPSM_realtime' | 'CPSM_archive_post' | 'pending',
+//     timestamp_cattura: ISO string,
+//     livello:    { stazione_id, stazione_nome, distanza_m, valore_m, timestamp_dato },
+//     vento:      { stazione_id, stazione_nome, distanza_m, dir_gradi, intensita_ms, timestamp_dato },
+//     pressione:  { stazione_id, stazione_nome, distanza_m, valore_hpa, timestamp_dato },
+//     temp_acqua: { stazione_id, stazione_nome, distanza_m, valore_c, timestamp_dato }
+//   }
+// Se fetch fallisce per offline: meteo_pending=true sul record, da completare a casa.
+// ===== FINE BLOCCO C step 1 =====
+
+// ===== BLOCCO C step 2 (4.3.64) — fetch real-time CPSM via proxy Cloudflare =====
+// Proxy attivo dal 11/05/2026, deployato su Cloudflare Workers.
+// Codice sorgente del proxy: vedere worker.js nel progetto.
+var CPSM_PROXY_URL='https://fd-cpsm-proxy.ennioweb.workers.dev';
+
+// Timeout fetch in millisecondi. Decisione 11/05/2026 — opzione B:
+// se in 3s il dato non arriva, lasciamo il record con meteo_pending=true.
+// Non blocca mai il salvataggio della cattura.
+var CPSM_FETCH_TIMEOUT_MS=3000;
+
+// Parser tollerante: il valore CPSM è una stringa tipo "0.43 m" o "1014.3 hPa".
+// Restituisce il numero o null se non valido o se è il sentinel -999 ("dato non pervenuto").
+function cpsmParseValore(s){
+  if(s===null||s===undefined)return null;
+  var n=parseFloat(String(s).replace(',','.'));
+  if(isNaN(n))return null;
+  if(n===-999)return null;
+  return n;
+}
+
+// Fetch generico con timeout. Restituisce array di stazioni o null in caso di errore.
+function cpsmFetchEndpoint(nome){
+  return new Promise(function(resolve){
+    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+    var timer=setTimeout(function(){
+      if(ctrl)ctrl.abort();
+      resolve(null);
+    },CPSM_FETCH_TIMEOUT_MS);
+    var opts={};
+    if(ctrl)opts.signal=ctrl.signal;
+    fetch(CPSM_PROXY_URL+'/'+nome,opts)
+      .then(function(r){
+        clearTimeout(timer);
+        if(!r.ok){resolve(null);return;}
+        return r.json();
+      })
+      .then(function(j){
+        if(!j)return;
+        resolve(Array.isArray(j)?j:null);
+      })
+      .catch(function(){clearTimeout(timer);resolve(null);});
+  });
+}
+
+// Cerca nel dataset CPSM il record della stazione specificata (per ID).
+function cpsmTrovaStazioneNelDataset(dataset,stazioneId){
+  if(!Array.isArray(dataset))return null;
+  for(var i=0;i<dataset.length;i++){
+    if(String(dataset[i].ID_stazione)===String(stazioneId))return dataset[i];
+  }
+  return null;
+}
+
+// Fetch del meteo geo-temporale per un punto (lat,lon).
+// 4.3.65 — parser corretto in base a formati reali degli endpoint CPSM verificati 11/05/2026:
+//   - livello.json:    valore = "0.43 m"
+//   - vento.json:      valore = "121 gradi, 4.5 m/s, 4.9 m/s" (direzione, velocità media, raffica)
+//   - pressione.json:  valore = "1000.5 hPa" (stazione fissa Palazzo Cavalli 1026)
+//   - tempacqua.json:  valore = "19.3 °C"   (stazione fissa Punta Salute 1025)
+// Restituisce sempre un oggetto. Se tutti i fetch falliscono → fonte:'pending'.
+function cpsmFetchMeteoAtPoint(lat,lon){
+  var timestamp=new Date().toISOString();
+  return Promise.all([
+    cpsmFetchEndpoint('livello'),
+    cpsmFetchEndpoint('vento'),
+    cpsmFetchEndpoint('pressione'),
+    cpsmFetchEndpoint('tempacqua')
+  ]).then(function(results){
+    var ds={livello:results[0],vento:results[1],pressione:results[2],tempacqua:results[3]};
+    var out={
+      timestamp_cattura:timestamp,
+      lat:lat,
+      lon:lon
+    };
+    var errori=[];
+
+    // === LIVELLO === stazione più vicina, valore "X.XX m"
+    var stLivello=cpsmStazionePiuVicina(lat,lon,'livello');
+    if(stLivello&&ds.livello){
+      var rec=cpsmTrovaStazioneNelDataset(ds.livello,stLivello.stazione.id);
+      if(rec){
+        out.livello={
+          stazione_id:stLivello.stazione.id,
+          stazione_nome:stLivello.stazione.nome,
+          distanza_m:stLivello.distanza_m,
+          valore_m:cpsmParseValore(rec.valore),
+          timestamp_dato:rec.data||null
+        };
+      } else errori.push('livello: stazione '+stLivello.stazione.id+' assente nel dataset');
+    } else if(!ds.livello) errori.push('livello: fetch fallito');
+
+    // === VENTO === stazione più vicina, valore "DIR gradi, INT m/s, RAFFICA m/s"
+    var stVento=cpsmStazionePiuVicina(lat,lon,'vento');
+    if(stVento&&ds.vento){
+      var rec=cpsmTrovaStazioneNelDataset(ds.vento,stVento.stazione.id);
+      if(rec){
+        if(rec.valore){
+          var parsed=cpsmParseValoreVento(rec.valore);
+          out.vento={
+            stazione_id:stVento.stazione.id,
+            stazione_nome:stVento.stazione.nome,
+            distanza_m:stVento.distanza_m,
+            dir_gradi:parsed.dir_gradi,
+            intensita_ms:parsed.intensita_ms,
+            raffica_ms:parsed.raffica_ms,
+            timestamp_dato:rec.data||null
+          };
+        } else errori.push('vento: stazione '+stVento.stazione.id+' senza valore (offline)');
+      } else errori.push('vento: stazione '+stVento.stazione.id+' assente nel dataset');
+    } else if(!ds.vento) errori.push('vento: fetch fallito');
+
+    // === PRESSIONE === stazione fissa Palazzo Cavalli (1026), valore "XXXX.X hPa"
+    if(ds.pressione){
+      var rec=cpsmTrovaStazioneNelDataset(ds.pressione,CPSM_STAZIONE_PRESSIONE_ID);
+      if(rec&&rec.valore){
+        out.pressione={
+          stazione_id:CPSM_STAZIONE_PRESSIONE_ID,
+          stazione_nome:rec.stazione||'Palazzo Cavalli',
+          valore_hpa:cpsmParseValore(rec.valore),
+          timestamp_dato:rec.data||null
+        };
+      } else errori.push('pressione: stazione 1026 senza dato');
+    } else errori.push('pressione: fetch fallito');
+
+    // === TEMP ACQUA === stazione fissa Punta Salute (1025), valore "XX.X °C"
+    if(ds.tempacqua){
+      var rec=cpsmTrovaStazioneNelDataset(ds.tempacqua,CPSM_STAZIONE_TEMP_ACQUA_ID);
+      if(rec&&rec.valore){
+        out.temp_acqua={
+          stazione_id:CPSM_STAZIONE_TEMP_ACQUA_ID,
+          stazione_nome:rec.stazione||'Punta Salute Canal Grande',
+          valore_c:cpsmParseValore(rec.valore),
+          timestamp_dato:rec.data||null
+        };
+      } else errori.push('temp_acqua: stazione 1025 senza dato');
+    } else errori.push('temp_acqua: fetch fallito');
+
+    // Determina fonte
+    var anySuccess=out.livello||out.vento||out.pressione||out.temp_acqua;
+    out.fonte=anySuccess?'CPSM_realtime':'pending';
+    if(errori.length)out.errori=errori;
+    return out;
+  });
+}
+
+// Parser specifico vento. Input: "121 gradi, 4.5 m/s, 4.9 m/s"
+// Output: { dir_gradi, intensita_ms, raffica_ms }. Tutti null se parsing fallisce.
+function cpsmParseValoreVento(s){
+  var out={dir_gradi:null,intensita_ms:null,raffica_ms:null};
+  if(!s||typeof s!=='string')return out;
+  // Split su virgola, poi estrae primo numero da ogni segmento
+  var parti=s.split(',');
+  if(parti.length>=1){
+    var m=parti[0].match(/-?\d+(\.\d+)?/);
+    if(m)out.dir_gradi=parseFloat(m[0]);
+  }
+  if(parti.length>=2){
+    var m=parti[1].match(/-?\d+(\.\d+)?/);
+    if(m)out.intensita_ms=parseFloat(m[0]);
+  }
+  if(parti.length>=3){
+    var m=parti[2].match(/-?\d+(\.\d+)?/);
+    if(m)out.raffica_ms=parseFloat(m[0]);
+  }
+  // Sentinel -999 → null
+  if(out.dir_gradi===-999)out.dir_gradi=null;
+  if(out.intensita_ms===-999)out.intensita_ms=null;
+  if(out.raffica_ms===-999)out.raffica_ms=null;
+  return out;
+}
+// ===== FINE BLOCCO C step 2 =====
+</script>
+</body>
+</html>
